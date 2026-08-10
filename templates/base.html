@@ -1,0 +1,62 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}TextileFlow{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">W</div>
+        <div>
+          <div class="brand-name">Wear ON</div>
+          <div class="brand-sub">Textile Operations</div>
+        </div>
+      </div>
+      <ul class="nav">
+        <li><a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"><span class="icon">&#9635;</span> Dashboard</a></li>
+        <li><a href="{% url 'order-list' %}" class="{% if request.resolver_match.url_name in 'order-list,order-detail,order-create,order-edit' %}active{% endif %}"><span class="icon">&#9776;</span> Orders</a></li>
+        <li><a href="{% url 'expense-list' %}" class="{% if request.resolver_match.url_name in 'expense-list,order-expenses' %}active{% endif %}"><span class="icon">&#128179;</span> Expenses</a></li>
+        <li><a href="{% url 'reports' %}" class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}"><span class="icon">&#128202;</span> Reports</a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <ul class="nav">
+          <li><a href="{% url 'settings' %}"><span class="icon">&#9881;</span> Settings</a></li>
+          <li><a href="{% url 'support' %}"><span class="icon">&#10067;</span> Support</a></li>
+          {% if user.is_authenticated %}
+          <li>
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="nav a" style="width:100%; text-align:left; background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; font-size:14px; font-weight:600; color:var(--green-900);">
+                <span class="icon">&#10148;</span> Logout
+              </button>
+            </form>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <input class="search-box" type="text" placeholder="Search orders, customers, or items...">
+        <div class="topbar-spacer"></div>
+        <div class="icon-btn">&#128276;</div>
+        <div class="avatar">{{ user.username|default:"?"|first|upper }}</div>
+        <a href="{% url 'order-create' %}" class="btn btn-primary">+ Add Order</a>
+      </div>
+      <div class="content">
+        {% if messages %}
+          {% for message in messages %}<div class="card" style="padding:12px 16px; margin-bottom:16px;">{{ message }}</div>{% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% load static humanize %}
+{% block title %}Expenses — {{ order.order_number }} — TextileFlow{% endblock %}
+{% block content %}
+<a href="{% url 'order-detail' order.pk %}" class="back-link">&larr; Back to Order</a>
+<div class="page-head-row">
+  <div>
+    <h1 class="page-title">Expense Management</h1>
+  </div>
+  <div class="actions-row">
+    <a href="{% url 'order-expenses-export' order.pk %}" class="btn btn-outline">&#8595; Export</a>
+    <button type="submit" form="expense-form" class="btn btn-primary">&#128190; Save Changes</button>
+  </div>
+</div>
+
+<div class="order-context-bar">
+  <span class="pill-order">{{ order.order_number }}</span>
+  <span>&#128100; {{ order.customer.name }}</span>
+  <span>&#128179; Order Total: &#8377;{{ order.grand_total|intcomma }}</span>
+</div>
+
+<form method="post" id="expense-form">
+  {% csrf_token %}
+  <div class="expense-layout">
+    <div class="card form-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="border:none; margin:0; padding:0;">Line Items</h3>
+        <button type="button" class="btn btn-sm" id="add-expense-row" style="background:var(--green-100); border-color:var(--green-100); color:var(--green-700);">+ Add Expense</button>
+      </div>
+      {{ formset.management_form }}
+      <table class="items-table" style="margin-top:14px;">
+        <thead>
+          <tr>
+            <th>Expense Name</th>
+            <th>Category</th>
+            <th style="width:70px;">Qty</th>
+            <th style="width:100px;">Unit Cost (&#8377;)</th>
+            <th style="width:100px;">Total (&#8377;)</th>
+            <th style="width:30px;"></th>
+          </tr>
+        </thead>
+        <tbody id="expenses-body">
+          {% for exp_form in formset %}
+          <tr class="expense-row">
+            <td>{{ exp_form.name }}</td>
+            <td>{{ exp_form.category }}</td>
+            <td class="qty-cell">{{ exp_form.quantity }}</td>
+            <td class="rate-cell">{{ exp_form.unit_cost }}</td>
+            <td class="amount-cell"><span class="row-amount">0.00</span></td>
+            <td>
+              {% if exp_form.instance.pk %}{{ exp_form.DELETE }}{% endif %}
+              {{ exp_form.id }}
+              <button type="button" class="row-remove" onclick="removeFormRow(this)">&times;</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <template id="empty-expense-row">
+        <tr class="expense-row">
+          <td>{{ formset.empty_form.name }}</td>
+          <td>{{ formset.empty_form.category }}</td>
+          <td class="qty-cell">{{ formset.empty_form.quantity }}</td>
+          <td class="rate-cell">{{ formset.empty_form.unit_cost }}</td>
+          <td class="amount-cell"><span class="row-amount">0.00</span></td>
+          <td><button type="button" class="row-remove" onclick="removeFormRow(this)">&times;</button></td>
+        </tr>
+      </template>
+    </div>
+
+    <div>
+      <div class="summary-card dark" style="margin-bottom:18px;">
+        <div class="label">Profit Margin &#8599;</div>
+        <div class="big" id="profit-margin-display">{{ order.profit_margin_percent }}%</div>
+        <p id="profit-margin-message">Healthy margin. Target is &gt;45%.</p>
+      </div>
+      <div class="card summary-card">
+        <h3 style="border:none; padding:0; margin:0 0 12px;">&#128179; Financial Summary</h3>
+        <div class="summary-list">
+          <div class="row"><span>Revenue (Total)</span><span>&#8377;{{ order.grand_total|floatformat:2|intcomma }}</span></div>
+          <div class="row"><span>Total Expenses</span><span id="total-expenses-display">&#8377;{{ order.total_expenses|floatformat:2|intcomma }}</span></div>
+          <div class="row"><span>Net Profit</span><span id="net-profit-display">&#8377;{{ order.profit|floatformat:2|intcomma }}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>window.ORDER_REVENUE = {{ order.grand_total|stringformat:"f" }};</script>
+<script src="{% static 'js/expense_form.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% load humanize %}
+<div class="card order-card">
+  <div class="order-card-top">
+    <span class="order-id">{{ order.order_number }}</span>
+    <span class="pill pill-{{ order.status }}">{{ order.get_status_display }}</span>
+  </div>
+  <a href="{% url 'order-detail' order.pk %}" class="order-name">{{ order.customer.name }}</a>
+  {% with first_item=order.items.first %}
+  {% if first_item %}
+  <div class="kv-row"><span class="k">Item</span><span class="v">{{ first_item.item_name }}</span></div>
+  <div class="kv-row"><span class="k">Quantity</span><span class="v">{{ first_item.quantity|floatformat:0 }}</span></div>
+  {% endif %}
+  {% endwith %}
+  <div class="kv-row"><span class="k">Delivery</span><span class="v">{{ order.expected_delivery_date|date:"d M Y"|default:"—" }}</span></div>
+  <div class="order-total-row"><span>Total Value</span><span>&#8377;{{ order.grand_total|intcomma }}</span></div>
+  <div class="progress-dots">
+    {% if order.status == "finished" %}
+      <span class="dot filled"></span><span class="dot-line filled"></span><span class="dot filled"></span><span class="dot-line filled"></span><span class="dot filled"></span>
+    {% elif order.status == "in_progress" %}
+      <span class="dot filled"></span><span class="dot-line filled"></span><span class="dot filled"></span><span class="dot-line"></span><span class="dot"></span>
+    {% else %}
+      <span class="dot filled"></span><span class="dot-line"></span><span class="dot"></span><span class="dot-line"></span><span class="dot"></span>
+    {% endif %}
+  </div>
+</div>

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Reports — TextileFlow{% endblock %}
+{% block content %}
+<h1 class="page-title">Reports</h1>
+<p class="page-sub">Revenue, expenses, and profit across all orders.</p>
+
+<div class="stat-grid">
+  <div class="card stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value">&#8377;{{ total_revenue|intcomma }}</div></div>
+  <div class="card stat-card"><div class="stat-label">Total Expenses</div><div class="stat-value red">&#8377;{{ total_expenses|intcomma }}</div></div>
+  <div class="card stat-card"><div class="stat-label">Net Profit</div><div class="stat-value green">&#8377;{{ net_profit|intcomma }}</div></div>
+  <div class="card stat-card"><div class="stat-label">Avg Order Value</div><div class="stat-value">&#8377;{{ avg_order_value|floatformat:0|intcomma }}</div></div>
+</div>
+
+<div class="detail-grid">
+  <div class="card info-card">
+    <h3>Orders by Status</h3>
+    {% for row in status_breakdown %}
+    <div class="bar-row">
+      <span class="bar-label">{{ row.label }}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:{{ row.pct|floatformat:0 }}%;"></span></span>
+      <span class="bar-value">{{ row.count }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="card info-card">
+    <h3>Top Customers by Revenue</h3>
+    {% for row in top_customers %}
+    <div class="bar-row">
+      <span class="bar-label">{{ row.customer.name }}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:{{ row.pct|floatformat:0 }}%;"></span></span>
+      <span class="bar-value">&#8377;{{ row.revenue|intcomma }}</span>
+    </div>
+    {% empty %}
+    <p class="text-muted">No revenue recorded yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

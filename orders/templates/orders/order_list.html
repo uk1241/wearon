@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Orders — TextileFlow{% endblock %}
+{% block content %}
+<div class="page-head-row">
+  <div>
+    <h1 class="page-title">Orders</h1>
+    <p class="page-sub">All customer orders in one place.</p>
+  </div>
+  <a href="{% url 'order-create' %}" class="btn btn-primary">+ Add Order</a>
+</div>
+
+<div class="filter-bar">
+  <div class="tabs">
+    {% for code, label in status_tabs %}
+      <a class="tab {% if active_status == code %}active{% endif %}" href="?status={{ code }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="order-grid">
+  {% for order in orders %}
+    {% include "orders/_order_card.html" %}
+  {% empty %}
+    <div class="empty-state">No orders match this filter.</div>
+  {% endfor %}
+</div>
+{% endblock %}

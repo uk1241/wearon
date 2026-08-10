@@ -1,0 +1,76 @@
+{% load static humanize %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Invoice {{ order.order_number }} — TextileFlow</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <div class="print-bar">
+    <a href="{% url 'order-detail' order.pk %}" class="btn btn-outline">&larr; Back to Order</a>
+    <button class="btn btn-primary" onclick="window.print()">&#128424; Print</button>
+  </div>
+  <div class="card invoice-wrap">
+    <div class="invoice-head">
+      <div>
+        <div class="brand-name" style="font-size:20px;">TextileFlow</div>
+        <div class="text-muted" style="font-size:12px;">Workshop MS — Textile Operations</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:800; font-size:18px;">Invoice</div>
+        <div class="text-muted" style="font-size:12px;">{{ order.order_number }}</div>
+        <div class="text-muted" style="font-size:12px;">{{ order.order_date|date:"d M Y" }}</div>
+      </div>
+    </div>
+
+    <div class="field-grid">
+      <div>
+        <div class="stat-label">Billed To</div>
+        <p style="margin:6px 0 0;">
+          {{ order.customer.name }}<br>
+          {% if order.customer.phone %}{{ order.customer.phone }}<br>{% endif %}
+          {% if order.customer.email %}{{ order.customer.email }}<br>{% endif %}
+          {{ order.shipping_address|default:order.customer.address }}
+        </p>
+      </div>
+      <div>
+        <div class="stat-label">Delivery Date</div>
+        <p style="margin:6px 0 0;">{{ order.expected_delivery_date|date:"d M Y"|default:"—" }}</p>
+        {% if order.reference_number %}
+        <div class="stat-label" style="margin-top:10px;">Reference / PO</div>
+        <p style="margin:6px 0 0;">{{ order.reference_number }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <table class="invoice-table">
+      <thead>
+        <tr><th>Item</th><th>Qty</th><th>Rate</th><th style="text-align:right;">Amount</th></tr>
+      </thead>
+      <tbody>
+        {% for item in order.items.all %}
+        <tr>
+          <td>{{ item.item_name }}{% if item.description %}<div class="text-muted" style="font-size:11px;">{{ item.description }}</div>{% endif %}</td>
+          <td>{{ item.quantity|floatformat:0 }}</td>
+          <td>&#8377;{{ item.unit_price|floatformat:2 }}</td>
+          <td style="text-align:right;">&#8377;{{ item.subtotal|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="invoice-totals">
+      <div class="kv-row"><span class="k">Subtotal</span><span class="v">&#8377;{{ order.subtotal|intcomma }}</span></div>
+      <div class="kv-row"><span class="k">Discount ({{ order.discount_percent }}%)</span><span class="v">-&#8377;{{ order.discount_amount|intcomma }}</span></div>
+      <div class="kv-row grand"><span class="k">Grand Total</span><span class="v">&#8377;{{ order.grand_total|intcomma }}</span></div>
+    </div>
+
+    {% if order.customer_notes %}
+    <div style="margin-top:24px;">
+      <div class="stat-label">Notes</div>
+      <p style="margin-top:6px;">{{ order.customer_notes }}</p>
+    </div>
+    {% endif %}
+  </div>
+</body>
+</html>

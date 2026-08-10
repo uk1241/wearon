@@ -1,0 +1,19 @@
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path("", views.dashboard, name="dashboard"),
+    path("orders/", views.order_list, name="order-list"),
+    path("orders/new/", views.order_form_view, name="order-create"),
+    path("orders/<int:pk>/edit/", views.order_form_view, name="order-edit"),
+    path("orders/<int:pk>/", views.order_detail, name="order-detail"),
+    path("orders/<int:pk>/mark-finished/", views.order_mark_finished, name="order-mark-finished"),
+    path("orders/<int:pk>/invoice/", views.order_invoice, name="order-invoice"),
+    path("orders/<int:pk>/expenses/", views.expense_management, name="order-expenses"),
+    path("orders/<int:pk>/expenses/export/", views.expense_export, name="order-expenses-export"),
+    path("expenses/", views.expense_list, name="expense-list"),
+    path("reports/", views.reports, name="reports"),
+    path("settings/", views.settings_page, name="settings"),
+    path("support/", views.support_page, name="support"),
+]

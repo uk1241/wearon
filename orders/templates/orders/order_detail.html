@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ order.order_number }} — TextileFlow{% endblock %}
+{% block content %}
+<a href="{% url 'order-list' %}" class="back-link">&larr; ORDER DETAILS</a>
+<div class="page-head-row">
+  <div>
+    <h1 class="page-title">Order #{{ order.order_number }} <span class="text-muted" style="font-weight:600;">- {{ order.customer.name }}</span></h1>
+  </div>
+  <div class="actions-row">
+    <a href="{% url 'order-edit' order.pk %}" class="btn btn-outline">&#9998; Edit Order</a>
+    <a href="{% url 'order-expenses' order.pk %}" class="btn btn-outline">&#128179; Expense</a>
+    <a href="{% url 'order-invoice' order.pk %}" class="btn btn-outline">&#128424; Print Invoice</a>
+    {% if order.status != "finished" %}
+    <form method="post" action="{% url 'order-mark-finished' order.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary">&#10003; Mark Finished</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="detail-grid" style="grid-template-columns: repeat(3, 1fr);">
+  <div class="card info-card">
+    <div class="stat-label">Current Status</div>
+    <div style="margin-top:10px;"><span class="pill pill-{{ order.status }}">&#9679; {{ order.get_status_display }}</span></div>
+  </div>
+  <div class="card info-card">
+    <div class="stat-label">Delivery Date</div>
+    <div class="stat-value" style="font-size:22px; margin-top:8px;">{{ order.expected_delivery_date|date:"d M Y"|default:"—" }}</div>
+  </div>
+  <div class="card info-card">
+    <div class="stat-label">Total Amount</div>
+    <div class="stat-value" style="font-size:22px; margin-top:8px;">&#8377;{{ order.grand_total|intcomma }}</div>
+  </div>
+</div>
+
+<div class="detail-grid thirds">
+  <div class="card info-card">
+    <h3>Customer Details</h3>
+    <div class="info-row"><span class="k">Name</span><span class="v">{{ order.customer.name }}</span></div>
+    <div class="info-row"><span class="k">Contact</span><span class="v">{{ order.customer.phone|default:"—" }}</span></div>
+    <div class="info-row"><span class="k">Email</span><span class="v">{{ order.customer.email|default:"—" }}</span></div>
+  </div>
+  <div class="card info-card">
+    <h3>Order Information</h3>
+    <div class="info-row"><span class="k">Order Date</span><span class="v">{{ order.order_date|date:"d M Y" }}</span></div>
+    <div class="info-row"><span class="k">Assigned Tailor</span><span class="v">{{ order.assigned_tailor|default:"—" }}</span></div>
+    <div class="info-row"><span class="k">Priority</span><span class="v"><span class="pill pill-{{ order.priority }}">{{ order.get_priority_display }}</span></span></div>
+    {% if order.reference_number %}<div class="info-row"><span class="k">Reference / PO</span><span class="v">{{ order.reference_number }}</span></div>{% endif %}
+  </div>
+  <div class="card info-card">
+    <h3>Order Progress</h3>
+    <ul class="timeline">
+      {% for step in order.progress_steps.all %}
+      <li>
+        <span class="dot-check">&#10003;</span>
+        <div class="t-title">{{ step.title }}</div>
+        <div class="t-time">{{ step.created_at|date:"d M, h:i A" }}</div>
+        {% if step.note %}<div class="t-note">{{ step.note }}</div>{% endif %}
+      </li>
+      {% empty %}
+      <li><div class="t-title text-muted">No progress recorded yet.</div></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<div class="card info-card">
+  <h3>Order Items</h3>
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Qty</th>
+        <th>Rate (&#8377;)</th>
+        <th style="text-align:right;">Amount (&#8377;)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in order.items.all %}
+      <tr>
+        <td>
+          {{ item.item_name }}
+          {% if item.description %}<div class="text-muted" style="font-size:12px;">{{ item.description }}</div>{% endif %}
+        </td>
+        <td>{{ item.quantity|floatformat:0 }}</td>
+        <td>{{ item.unit_price|floatformat:2 }}</td>
+        <td class="amount-cell">{{ item.subtotal|floatformat:2 }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="text-muted">No items added.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="totals-box">
+    <div class="kv-row"><span class="k">Subtotal</span><span class="v">&#8377;{{ order.subtotal|intcomma }}</span></div>
+    <div class="kv-row"><span class="k">Discount ({{ order.discount_percent }}%)</span><span class="v">-&#8377;{{ order.discount_amount|intcomma }}</span></div>
+    <div class="kv-row grand"><span class="k">Grand Total</span><span class="v">&#8377;{{ order.grand_total|intcomma }}</span></div>
+  </div>
+  {% if order.customer_notes %}
+  <div style="margin-top:16px;">
+    <div class="stat-label">Notes</div>
+    <p style="margin-top:6px;">{{ order.customer_notes }}</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

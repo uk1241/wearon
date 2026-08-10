@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Dashboard — TextileFlow{% endblock %}
+{% block content %}
+<h1 class="page-title">Overview</h1>
+<p class="page-sub">Track workshop performance and active orders.</p>
+
+<div class="stat-grid">
+  <div class="card stat-card"><div class="stat-label">Total Orders</div><div class="stat-value">{{ total_orders }}</div></div>
+  <div class="card stat-card"><div class="stat-label">Pending</div><div class="stat-value">{{ pending_count }}</div></div>
+  <div class="card stat-card"><div class="stat-label">Completed</div><div class="stat-value green">{{ finished_count }}</div></div>
+  <div class="card stat-card"><div class="stat-label">Revenue (Today)</div><div class="stat-value">&#8377;{{ revenue_today|intcomma }}</div></div>
+  <div class="card stat-card"><div class="stat-label">Expenses (Today)</div><div class="stat-value red">&#8377;{{ expenses_today|intcomma }}</div></div>
+  <div class="card stat-card"><div class="stat-label">Net Profit</div><div class="stat-value">&#8377;{{ net_profit_today|intcomma }}</div></div>
+</div>
+
+<div class="filter-bar">
+  <div class="tabs">
+    {% for code, label in status_tabs %}
+      <a class="tab {% if active_status == code %}active{% endif %}" href="?status={{ code }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+  <a href="{% url 'order-list' %}" class="btn btn-outline btn-sm">View All Orders</a>
+</div>
+
+<div class="order-grid">
+  {% for order in orders %}
+    {% include "orders/_order_card.html" %}
+  {% empty %}
+    <div class="empty-state">No orders yet. <a href="{% url 'order-create' %}">Create your first order</a>.</div>
+  {% endfor %}
+</div>
+{% endblock %}
