@@ -29,11 +29,17 @@ import os
 
 ALLOWED_HOSTS = [
     "wearon-os.onrender.com",
+    "wearon.co.in",
+    "www.wearon.co.in",
     "localhost",
     "127.0.0.1",
 ]
 
-CSRF_TRUSTED_ORIGINS = [ "https://wearon-os.onrender.com", ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://wearon-os.onrender.com",
+    "https://wearon.co.in",
+    "https://www.wearon.co.in",
+]
 
 # Application definition
 
