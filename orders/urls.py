@@ -16,4 +16,5 @@ urlpatterns = [
     path("reports/", views.reports, name="reports"),
     path("settings/", views.settings_page, name="settings"),
     path("support/", views.support_page, name="support"),
+    path("health/", views.health_check, name="health"),
 ]
