@@ -196,3 +196,30 @@ def settings_page(request):
 @login_required
 def support_page(request):
     return render(request, "orders/placeholder.html", {"page_title": "Support"})
+
+
+
+@login_required
+def health_check(request):
+    db_settings = connection.settings_dict
+    db_status = "healthy"
+    error_message = ""
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+    except OperationalError as exc:
+        db_status = "unhealthy"
+        error_message = str(exc)
+
+    context = {
+        "page_title": "System Health",
+        "db_name": db_settings.get("NAME"),
+        "db_host": db_settings.get("HOST") or "localhost",
+        "db_engine": db_settings.get("ENGINE", "").rsplit(".", 1)[-1],
+        "db_status": db_status,
+        "error_message": error_message,
+    }
+    return render(request, "orders/health.html", context)
+
