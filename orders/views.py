@@ -106,11 +106,23 @@ def order_form_view(request, pk=None):
         formset = OrderItemFormSet(request.POST, instance=order, prefix="items")
         payment_formset = PaymentFormSet(request.POST, instance=order, prefix="payments")
         if form.is_valid() and formset.is_valid() and payment_formset.is_valid():
+            # prepare order instance but don't save yet; compute collected amount from payments
             order = form.save(commit=False)
+            # compute total from validated payment formset cleaned data (skip deleted forms)
+            total_paid = Decimal("0")
+            for pform in payment_formset.cleaned_data:
+                if pform and not pform.get("DELETE", False):
+                    amt = pform.get("amount") or Decimal("0")
+                    try:
+                        total_paid += Decimal(str(amt))
+                    except Exception:
+                        total_paid += Decimal("0")
+            # set aggregated amount on order before saving so it's persisted on first save
+            order.amount_paid = total_paid.quantize(Decimal("0.01"))
             order.save()
+            # save items and payments referencing the saved order
             formset.instance = order
             formset.save()
-            order.save()
             payment_formset.instance = order
             payment_formset.save()
             if is_new:
@@ -222,6 +234,11 @@ def order_mark_unfinished(request, pk):
 def order_mark_paid(request, pk):
     order = get_object_or_404(Order, pk=pk)
     if not order.is_paid:
+        # mark fully paid: set amount_paid to grand_total and mark is_paid
+        try:
+            order.amount_paid = order.grand_total
+        except Exception:
+            order.amount_paid = Decimal("0")
         order.is_paid = True
         order.save()
     next_url = request.POST.get("next") or request.GET.get("next")
@@ -235,7 +252,12 @@ def order_mark_paid(request, pk):
 def order_mark_unpaid(request, pk):
     order = get_object_or_404(Order, pk=pk)
     if order.is_paid:
+        # mark unpaid: clear is_paid and reset amount_paid to 0.00
         order.is_paid = False
+        try:
+            order.amount_paid = Decimal("0.00")
+        except Exception:
+            order.amount_paid = Decimal("0")
         order.save()
     next_url = request.POST.get("next") or request.GET.get("next")
     if next_url:
@@ -344,14 +366,14 @@ def customer_detail(request, pk):
         Customer.objects.prefetch_related("orders__items", "orders__expenses"),
         pk=pk,
     )
-    # Calculate paid and unpaid totals for the customer based on order status
-    # Treat orders with status == STATUS_FINISHED as paid; others as unpaid
+    # Calculate paid and unpaid totals for the customer.
+    # unpaid_total is the sum of outstanding due amounts across orders where:
+    # - order.amount_due > 0 AND order.status == finished AND not order.is_paid
     orders = list(customer.orders.all())
-    paid_total = sum(
-        (o.grand_total for o in orders if o.status == Order.STATUS_FINISHED), Decimal("0")
-    )
+    paid_total = sum((o.amount_paid for o in orders), Decimal("0"))
     unpaid_total = sum(
-        (o.grand_total for o in orders if o.status != Order.STATUS_FINISHED), Decimal("0")
+        (o.amount_due for o in orders if o.amount_due > Decimal("0") and o.status == Order.STATUS_FINISHED and not o.is_paid),
+        Decimal("0"),
     )
 
     return render(
@@ -361,6 +383,27 @@ def customer_detail(request, pk):
             "customer": customer,
             "paid_total": paid_total,
             "unpaid_total": unpaid_total,
+        },
+    )
+
+
+@login_required
+def customer_due_invoice(request, pk):
+    customer = get_object_or_404(
+        Customer.objects.prefetch_related("orders__items", "orders__expenses"),
+        pk=pk,
+    )
+    # select orders that are finished, marked unpaid, and have outstanding due
+    orders = list(customer.orders.order_by("-created_at").all())
+    due_orders = [o for o in orders if o.amount_due > Decimal("0") and o.status == Order.STATUS_FINISHED and not o.is_paid]
+    total_due = sum((o.amount_due for o in due_orders), Decimal("0"))
+    return render(
+        request,
+        "orders/customer_due_invoice.html",
+        {
+            "customer": customer,
+            "due_orders": due_orders,
+            "total_due": total_due,
         },
     )
 

@@ -22,8 +22,15 @@
     var discountInput = document.querySelector('input[name="discount_percent"]');
     var discountPct = discountInput ? num(discountInput.value) : 0;
     var grand = subtotal - subtotal * (discountPct / 100);
+    // sum payment rows if present, otherwise fall back to amount_paid input
+    var paymentSum = 0;
+    document.querySelectorAll("#payments-body .payment-row").forEach(function (prow) {
+      var payInput = prow.querySelector('.payment-amount');
+      if (payInput) paymentSum += num(payInput.value);
+    });
     var amountPaidInput = document.querySelector('input[name="amount_paid"]');
-    var amountPaid = amountPaidInput ? num(amountPaidInput.value) : 0;
+    if (amountPaidInput) amountPaidInput.value = paymentSum.toFixed(2);
+    var amountPaid = paymentSum;
     var amountDue = grand - amountPaid;
 
     var subtotalEl = document.getElementById("subtotal-display");
@@ -116,6 +123,16 @@
     var amountPaidInput = document.querySelector('input[name="amount_paid"]');
     if (amountPaidInput) amountPaidInput.addEventListener("input", recalcTotals);
 
+    // listen for payment amount changes (delegated)
+    var paymentsBody = document.getElementById('payments-body');
+    if (paymentsBody) {
+      paymentsBody.addEventListener('input', function(e){
+        if (e.target.classList && e.target.classList.contains('payment-amount')) {
+          recalcTotals();
+        }
+      });
+    }
+
     var paymentMethodSelect = document.querySelector('select[name="payment_method"]');
     var paymentDetailsRow = document.getElementById("payment-details-row");
     if (paymentMethodSelect) {
@@ -134,5 +151,12 @@
     if (addBtn) addBtn.addEventListener("click", addItemRow);
     var addPaymentBtn = document.getElementById("add-payment-row");
     if (addPaymentBtn) addPaymentBtn.addEventListener("click", addPaymentRow);
+    // ensure totals are recalculated just before form submission so server receives final values
+    var orderForm = document.getElementById('order-form');
+    if (orderForm) {
+      orderForm.addEventListener('submit', function(e){
+        recalcTotals();
+      });
+    }
   });
 })();

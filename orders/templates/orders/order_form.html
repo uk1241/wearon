@@ -9,7 +9,6 @@
   </div>
   <div class="actions-row">
     <a href="{% if order %}{% url 'order-detail' order.pk %}{% else %}{% url 'order-list' %}{% endif %}" class="btn btn-outline">Cancel</a>
-    <button type="submit" form="order-form" class="btn btn-primary">Save Order</button>
   </div>
 </div>
 
@@ -146,12 +145,7 @@
         <span class="k">Discount</span>
         <span class="v discount-input">{{ form.discount_percent }} %</span>
       </div>
-      <div class="kv-row">
-        <span class="k">Amount Paid</span>
-        <span class="v">{{ form.amount_paid }}</span>
-      </div>
-      <div class="kv-row grand"><span class="k">Grand Total</span><span class="v" id="grand-total-display">&#8377;0.00</span></div>
-      <div class="kv-row"><span class="k">Amount Due</span><span class="v" id="amount-due-display">&#8377;0.00</span></div>
+      
     </div>
   </div>
 
@@ -165,7 +159,7 @@
           <th style="width:36px">#</th>
           <th>Payer Name</th>
           <th>Payment Method</th>
-          <th>Details</th>
+          <th>Amount</th>
           <th style="width:30px"></th>
         </tr>
       </thead>
@@ -175,7 +169,7 @@
           <td class="row-num">{{ forloop.counter }}</td>
           <td>{{ payment_form.payer_name }}</td>
           <td>{{ payment_form.method }}</td>
-          <td>{{ payment_form.details }}</td>
+          <td>{{ payment_form.amount }}</td>
           <td>
             {% if payment_form.instance.pk %}{{ payment_form.DELETE }}{% endif %}
             {{ payment_form.id }}
@@ -192,7 +186,7 @@
         <td class="row-num"></td>
         <td>{{ payment_formset.empty_form.payer_name }}</td>
         <td>{{ payment_formset.empty_form.method }}</td>
-        <td>{{ payment_formset.empty_form.details }}</td>
+        <td>{{ payment_formset.empty_form.amount }}</td>
         <td><button type="button" class="row-remove" onclick="removeFormRow(this, 'payments-body')">&times;</button></td>
       </tr>
     </template>
@@ -203,6 +197,18 @@
     <div class="field">
       <label>Customer Notes</label>
       {{ form.customer_notes }}
+    </div>
+  </div>
+
+  <div class="card form-card">
+    <h3>Collection</h3>
+    <div class="field">
+      <label>Amount Collected</label>
+      {{ form.amount_paid }}
+    </div>
+    <div class="totals-box" style="margin-top:12px;">
+      <div class="kv-row grand"><span class="k">Grand Total</span><span class="v" id="grand-total-display">&#8377;0.00</span></div>
+      <div class="kv-row"><span class="k">Amount Due</span><span class="v" id="amount-due-display">&#8377;0.00</span></div>
     </div>
   </div>
 

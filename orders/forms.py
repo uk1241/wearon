@@ -48,8 +48,8 @@ class OrderForm(forms.ModelForm):
             "assigned_tailor",
             "priority",
             "discount_percent",
-            "amount_paid",
             "customer_notes",
+            "amount_paid",
         ]
         widgets = {
             "order_date": forms.DateInput(attrs={"type": "date"}),
@@ -126,14 +126,14 @@ OrderItemFormSet = inlineformset_factory(
 class PaymentForm(forms.ModelForm):
     class Meta:
         model = Payment
-        fields = ["payer_name", "method", "details"]
+        fields = ["payer_name", "method", "amount"]
         widgets = {
             "payer_name": forms.TextInput(
                 attrs={"placeholder": "Payer name", "class": "payment-name"}
             ),
             "method": forms.Select(attrs={"class": "payment-method-select"}),
-            "details": forms.TextInput(
-                attrs={"placeholder": "Payment reference or note", "class": "payment-details"}
+            "amount": forms.NumberInput(
+                attrs={"placeholder": "Amount paid", "class": "payment-amount", "step": "0.01", "min": "0"}
             ),
         }
 

@@ -19,6 +19,7 @@ urlpatterns = [
     path("customers/<int:pk>/", views.customer_detail, name="customer-detail"),
     path("customers/new/", views.customer_create, name="customer-create"),
     path("customers/<int:pk>/export/", views.customer_export, name="customer-export"),
+    path("customers/<int:pk>/due-invoice/", views.customer_due_invoice, name="customer-due-invoice"),
     path("products/", views.product_list, name="product-list"),
     path("products/price/", views.product_price, name="product-price"),
     path("products/new/", views.product_create, name="product-create"),

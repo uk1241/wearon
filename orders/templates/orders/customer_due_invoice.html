@@ -1,0 +1,91 @@
+{% load static humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Due Invoice — {{ customer.name }} — TextileFlow</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    @media print { .print-bar { display:none } }
+  </style>
+</head>
+<body>
+  <div class="print-bar">
+    <a href="{% url 'customer-detail' customer.pk %}" class="btn btn-outline">&larr; Back</a>
+    <button class="btn btn-primary" onclick="window.print()">&#128424; Print</button>
+  </div>
+
+  <div class="card invoice-wrap">
+    <div class="invoice-head">
+      <div>
+        <div class="brand-name" style="font-size:20px;">Wear-ON</div>
+        <div class="text-muted" style="font-size:12px;">Combined Due Invoice</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:800; font-size:18px;">Invoice</div>
+        <div class="text-muted" style="font-size:12px;">{{ customer.name }}</div>
+        <div class="text-muted" style="font-size:12px;">{{ now|date:"d M Y" }}</div>
+      </div>
+    </div>
+
+    <div class="field-grid">
+      <div>
+        <div class="stat-label">Billed To</div>
+        <p style="margin:6px 0 0;">
+          {{ customer.name }}<br>
+          {% if customer.phone %}{{ customer.phone }}<br>{% endif %}
+          {% if customer.email %}{{ customer.email }}<br>{% endif %}
+          {{ customer.address|default:'—' }}
+        </p>
+      </div>
+      <div>
+        <div class="stat-label">Invoice Summary</div>
+        <p style="margin:6px 0 0;">Combined outstanding balances for this customer.</p>
+      </div>
+    </div>
+
+    <table class="invoice-table">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Items</th>
+          <th style="text-align:right;">Total</th>
+          <th style="text-align:right;">Paid</th>
+          <th style="text-align:right;">Due</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in due_orders %}
+        <tr>
+          <td style="vertical-align:top;">
+            <a href="{% url 'order-detail' order.pk %}">{{ order.order_number }}</a>
+            <div class="text-muted" style="font-size:11px;">{{ order.order_date|date:"d M Y" }}</div>
+          </td>
+          <td style="vertical-align:top;">
+            {% for item in order.items.all %}
+              <div style="margin-bottom:6px;">
+                <div>{{ item.item_name }}</div>
+                {% if item.description %}
+                  <div class="text-muted" style="font-size:11px;">{{ item.description }}</div>
+                {% endif %}
+              </div>
+            {% empty %}
+              <div class="text-muted">No items</div>
+            {% endfor %}
+          </td>
+          <td style="text-align:right; vertical-align:top;">&#8377;{{ order.grand_total|intcomma }}</td>
+          <td style="text-align:right; vertical-align:top;">&#8377;{{ order.amount_paid|intcomma }}</td>
+          <td style="text-align:right; vertical-align:top;">&#8377;{{ order.amount_due|intcomma }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted">No outstanding dues found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="invoice-totals">
+      <div class="kv-row"><span class="k">Total Due</span><span class="v">&#8377;{{ total_due|intcomma }}</span></div>
+    </div>
+  </div>
+</body>
+</html>
