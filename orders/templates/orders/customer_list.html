@@ -5,6 +5,10 @@
 <h1 class="page-title">Customers</h1>
 <p class="page-sub">Browse customers and view their order details.</p>
 
+<div style="margin-bottom:12px;">
+  <a href="{% url 'customer-create' %}?next={% url 'customer-list' %}" class="btn btn-primary">+ Add Customer</a>
+</div>
+
 <div class="order-grid">
   {% for customer in customers %}
   {% with first_order=customer.orders.first %}

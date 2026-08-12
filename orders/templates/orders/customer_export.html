@@ -85,6 +85,14 @@
     </div>
 
     <div class="summary-grid">
+      <div class="summary-card" style="background:#e9fbef; border:1px solid #c6f0d6;">
+        <div class="label">Paid Invoices</div>
+        <div class="value">&#8377;{{ paid_total|intcomma }}</div>
+      </div>
+      <div class="summary-card" style="background:#fff5f5; border:1px solid #ffd6d6;">
+        <div class="label">Unpaid Invoices</div>
+        <div class="value">&#8377;{{ unpaid_total|intcomma }}</div>
+      </div>
       <div class="summary-card">
         <div class="label">Total Revenue</div>
         <div class="value">&#8377;{{ total_revenue|intcomma }}</div>

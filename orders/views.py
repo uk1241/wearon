@@ -7,10 +7,13 @@ from django.db import connection
 from django.db.utils import OperationalError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
 from .forms import ExpenseFormSet, OrderForm, OrderItemFormSet
-from .models import Customer, Expense, Order, OrderItem, OrderProgress
+from .forms import FabricForm, CustomerForm
+from .models import Customer, Expense, Order, OrderItem, OrderProgress, Fabric
+from django.db.models import Count
 
 ORDER_STATUS_TABS = [
     (Order.STATUS_IN_PROGRESS, "In Progress"),
@@ -28,11 +31,13 @@ def _filter_by_status(queryset, status):
 
 @login_required
 def dashboard(request):
-    orders = Order.objects.select_related("customer").prefetch_related("items")
+    orders = Order.objects.select_related("customer").prefetch_related("items", "expenses")
     today = date.today()
     status = request.GET.get("status", Order.STATUS_IN_PROGRESS)
 
     todays_orders = orders.filter(order_date=today)
+    total_revenue = sum((o.grand_total for o in orders), Decimal("0"))
+    total_expenses = sum((o.total_expenses for o in orders), Decimal("0")).quantize(Decimal("0.01"))
     revenue_today = sum((o.grand_total for o in todays_orders), Decimal("0"))
     expenses_today = sum(
         (e.total for e in Expense.objects.filter(created_at__date=today)), Decimal("0")
@@ -44,7 +49,9 @@ def dashboard(request):
         "finished_count": orders.filter(status=Order.STATUS_FINISHED).count(),
         "revenue_today": revenue_today,
         "expenses_today": expenses_today,
-        "net_profit_today": revenue_today - expenses_today,
+        "total_revenue": total_revenue,
+        "total_expenses": total_expenses,
+        "net_profit": total_revenue - total_expenses,
         "orders": _filter_by_status(orders, status)[:30],
         "active_status": status,
         "status_tabs": ORDER_STATUS_TABS,
@@ -71,6 +78,12 @@ def customer_list(request):
 
 
 @login_required
+def product_list(request):
+    products = Fabric.objects.order_by("name").annotate(used_count=Count("order_items"))
+    return render(request, "orders/product_list.html", {"products": products, "next_url": request.get_full_path()})
+
+
+@login_required
 def order_form_view(request, pk=None):
     order = get_object_or_404(Order, pk=pk) if pk else None
     is_new = order is None
@@ -80,6 +93,12 @@ def order_form_view(request, pk=None):
         OrderItem.objects.order_by("item_name")
         .values_list("item_name", flat=True)
         .distinct()
+    )
+
+    products = Fabric.objects.order_by("name")
+    # prepare simple customers data for client-side auto-fill
+    customers_data = list(
+        Customer.objects.order_by("name").values("name", "phone", "email", "address")
     )
 
     if request.method == "POST":
@@ -106,8 +125,58 @@ def order_form_view(request, pk=None):
             "is_new": is_new,
             "customers": customers,
             "item_names": item_names,
+            "products": products,
+            "next_url": request.get_full_path(),
+            "customers_data": customers_data,
         },
     )
+
+
+@login_required
+def customer_create(request):
+    next_url = request.GET.get("next") or request.POST.get("next") or None
+    if request.method == "POST":
+        form = CustomerForm(request.POST)
+        if form.is_valid():
+            form.save()
+            if next_url:
+                return redirect(next_url)
+            return redirect("customer-list")
+    else:
+        form = CustomerForm()
+    return render(request, "orders/customer_form.html", {"form": form, "next": next_url})
+
+
+@login_required
+def product_create(request):
+    next_url = request.GET.get("next") or request.POST.get("next") or None
+    if request.method == "POST":
+        form = FabricForm(request.POST)
+        if form.is_valid():
+            form.save()
+            if next_url:
+                return redirect(next_url)
+            return redirect("product-list")
+    else:
+        form = FabricForm()
+    return render(request, "orders/product_form.html", {"form": form, "next": next_url})
+
+
+@login_required
+def product_price(request):
+    """Return JSON price for a product name lookup.
+
+    Accepts GET param `name` and returns {"price": "0.00"} or 404 when not found.
+    """
+    name = request.GET.get("name")
+    if not name:
+        return JsonResponse({"error": "missing name"}, status=400)
+    try:
+        fabric = Fabric.objects.get(name=name)
+    except Fabric.DoesNotExist:
+        return JsonResponse({"error": "not found"}, status=404)
+    # return as string to avoid Decimal -> JSON issues
+    return JsonResponse({"price": str(fabric.price_per_unit)})
 
 
 @login_required
@@ -268,7 +337,25 @@ def customer_detail(request, pk):
         Customer.objects.prefetch_related("orders__items", "orders__expenses"),
         pk=pk,
     )
-    return render(request, "orders/customer_detail.html", {"customer": customer})
+    # Calculate paid and unpaid totals for the customer based on order status
+    # Treat orders with status == STATUS_FINISHED as paid; others as unpaid
+    orders = list(customer.orders.all())
+    paid_total = sum(
+        (o.grand_total for o in orders if o.status == Order.STATUS_FINISHED), Decimal("0")
+    )
+    unpaid_total = sum(
+        (o.grand_total for o in orders if o.status != Order.STATUS_FINISHED), Decimal("0")
+    )
+
+    return render(
+        request,
+        "orders/customer_detail.html",
+        {
+            "customer": customer,
+            "paid_total": paid_total,
+            "unpaid_total": unpaid_total,
+        },
+    )
 
 
 @login_required
@@ -281,6 +368,8 @@ def customer_export(request, pk):
     total_revenue = sum((order.grand_total for order in orders), Decimal("0"))
     total_expenses = sum((order.total_expenses for order in orders), Decimal("0"))
     net_profit = total_revenue - total_expenses
+    paid_total = sum((order.grand_total for order in orders if order.status == Order.STATUS_FINISHED), Decimal("0"))
+    unpaid_total = sum((order.grand_total for order in orders if order.status != Order.STATUS_FINISHED), Decimal("0"))
     return render(
         request,
         "orders/customer_export.html",
@@ -290,6 +379,8 @@ def customer_export(request, pk):
             "total_revenue": total_revenue,
             "total_expenses": total_expenses,
             "net_profit": net_profit,
+            "paid_total": paid_total,
+            "unpaid_total": unpaid_total,
         },
     )
 

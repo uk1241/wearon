@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Add Product — TextileFlow{% endblock %}
+{% block content %}
+<h1 class="page-title">Add Product</h1>
+<div class="card form-card" style="max-width:760px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="field-grid">
+      <div class="field">
+        <label for="id_name">Product Name</label>
+        {{ form.name }}
+      </div>
+      <div class="field">
+        <label for="id_fabric_type">Fabric Type</label>
+        {{ form.fabric_type }}
+      </div>
+      <div class="field">
+        <label for="id_color">Color</label>
+        {{ form.color }}
+      </div>
+      <div class="field">
+        <label for="id_unit">Unit</label>
+        {{ form.unit }}
+      </div>
+      <div class="field">
+        <label for="id_price_per_unit">Price per Unit (₹)</label>
+        {{ form.price_per_unit }}
+      </div>
+      <div class="field">
+        <label for="id_stock_quantity">Stock Quantity</label>
+        {{ form.stock_quantity }}
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:12px;">
+      <input type="hidden" name="next" value="{{ next }}">
+      <a href="{% if next %}{{ next }}{% else %}{% url 'product-list' %}{% endif %}" class="btn btn-outline">Cancel</a>
+      <button class="btn btn-primary" type="submit">Save Product</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

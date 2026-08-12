@@ -11,8 +11,6 @@
   <div class="actions-row">
     <a href="{% url 'customer-export' customer.pk %}" class="btn btn-outline">&#128438; Export / Print</a>
   </div>
-</div>
-
 <div class="detail-grid thirds">
   <div class="card info-card">
     <h3>Contact</h3>
@@ -49,6 +47,7 @@
         <th>Payment</th>
         <th>Delivery</th>
         <th style="text-align:right;">Total</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -59,6 +58,24 @@
         <td>{{ order.payment_status_label }}</td>
         <td>{{ order.expected_delivery_date|date:"d M Y"|default:'—' }}</td>
         <td class="amount-cell">&#8377;{{ order.grand_total|intcomma }}</td>
+        <td>
+          <a href="{% url 'order-invoice' order.pk %}" class="btn btn-outline btn-sm" style="margin-right:6px;">
+            {{ order.payment_status_label }} Invoice
+          </a>
+          {% if order.is_paid %}
+          <form method="post" action="{% url 'order-mark-unpaid' order.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'customer-detail' customer.pk %}">
+            <button type="submit" class="btn btn-outline btn-sm">Mark Unpaid</button>
+          </form>
+          {% else %}
+          <form method="post" action="{% url 'order-mark-paid' order.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'customer-detail' customer.pk %}">
+            <button type="submit" class="btn btn-primary btn-sm">Mark Paid</button>
+          </form>
+          {% endif %}
+        </td>
       </tr>
       {% empty %}
       <tr><td colspan="4" class="text-muted">No orders found.</td></tr>

@@ -22,11 +22,16 @@
     var discountInput = document.querySelector('input[name="discount_percent"]');
     var discountPct = discountInput ? num(discountInput.value) : 0;
     var grand = subtotal - subtotal * (discountPct / 100);
+    var amountPaidInput = document.querySelector('input[name="amount_paid"]');
+    var amountPaid = amountPaidInput ? num(amountPaidInput.value) : 0;
+    var amountDue = grand - amountPaid;
 
     var subtotalEl = document.getElementById("subtotal-display");
     var grandEl = document.getElementById("grand-total-display");
+    var dueEl = document.getElementById("amount-due-display");
     if (subtotalEl) subtotalEl.textContent = "₹" + subtotal.toFixed(2);
     if (grandEl) grandEl.textContent = "₹" + grand.toFixed(2);
+    if (dueEl) dueEl.textContent = "₹" + amountDue.toFixed(2);
   }
 
   window.removeFormRow = function (button, tbodyId) {
@@ -63,13 +68,36 @@
     recalcTotals();
 
     document.getElementById("items-body").addEventListener("input", function (e) {
-      if (e.target.classList.contains("item-qty") || e.target.classList.contains("item-rate")) {
-        recalcTotals();
-      }
+        if (e.target.classList.contains("item-qty") || e.target.classList.contains("item-rate")) {
+          recalcTotals();
+        }
+        // when item name is entered/selected try to fetch product price
+        if (e.target.classList.contains("item-name")) {
+          var name = e.target.value && e.target.value.trim();
+          if (!name) return;
+          var row = e.target.closest("tr");
+          // fetch price from server
+          fetch("/products/price/?name=" + encodeURIComponent(name)).then(function (resp) {
+            if (!resp.ok) return null;
+            return resp.json();
+          }).then(function (data) {
+            if (!data || !data.price) return;
+            var rateInput = row.querySelector('.item-rate');
+            if (rateInput) {
+              rateInput.value = parseFloat(data.price).toFixed(2);
+              recalcTotals();
+            }
+          }).catch(function (err) {
+            // ignore fetch errors silently
+            console.warn('price fetch failed', err);
+          });
+        }
     });
 
     var discountInput = document.querySelector('input[name="discount_percent"]');
     if (discountInput) discountInput.addEventListener("input", recalcTotals);
+    var amountPaidInput = document.querySelector('input[name="amount_paid"]');
+    if (amountPaidInput) amountPaidInput.addEventListener("input", recalcTotals);
 
     var addBtn = document.getElementById("add-item-row");
     if (addBtn) addBtn.addEventListener("click", addItemRow);

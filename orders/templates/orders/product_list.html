@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Products — TextileFlow{% endblock %}
+{% block content %}
+<h1 class="page-title">Products</h1>
+<p class="page-sub">Browse fabrics and stock details.</p>
+<div style="margin-bottom:12px;">
+  <a href="{% url 'product-create' %}?next={{ next_url }}" class="btn btn-primary">+ Add Product</a>
+</div>
+
+<div class="order-grid">
+  {% for product in products %}
+  <div class="card order-card customer-card">
+    <div class="order-card-top">
+      <span class="order-id">Product</span>
+      <div class="pill-row">
+        <span class="pill">{{ product.unit }}</span>
+      </div>
+    </div>
+    <div class="order-name">{{ product.name }}</div>
+    <div class="kv-row"><span class="k">Type</span><span class="v">{{ product.fabric_type|default:'—' }}</span></div>
+    <div class="kv-row"><span class="k">Color</span><span class="v">{{ product.color|default:'—' }}</span></div>
+    <div class="kv-row"><span class="k">Price</span><span class="v">&#8377;{{ product.price_per_unit|floatformat:2 }}</span></div>
+    <div class="kv-row"><span class="k">Stock</span><span class="v">{{ product.stock_quantity|floatformat:2 }}</span></div>
+    <div class="kv-row"><span class="k">Used In</span><span class="v">{{ product.used_count }} order(s){% if product.used_count > 0 %} — <a href="#" onclick="document.getElementById('uses-{{ forloop.counter }}').style.display='block';return false;">show</a>{% endif %}</span></div>
+    {% if product.used_count > 0 %}
+    <div id="uses-{{ forloop.counter }}" style="display:none;margin-top:8px;">
+      <ul style="margin:0;padding-left:18px;">
+        {% for oi in product.order_items.all|slice:5 %}
+        <li><a href="{% url 'order-detail' oi.order.pk %}">{{ oi.order.order_number }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+  {% empty %}
+  <div class="empty-state">No products available.</div>
+  {% endfor %}
+</div>
+{% endblock %}

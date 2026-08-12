@@ -2,6 +2,35 @@ from django import forms
 from django.forms import inlineformset_factory
 
 from .models import Customer, Expense, Order, OrderItem
+from .models import Fabric
+from django import forms as _forms
+
+
+class CustomerForm(_forms.ModelForm):
+    class Meta:
+        model = Customer
+        fields = ["name", "phone", "email", "address"]
+        widgets = {
+            "name": _forms.TextInput(attrs={"placeholder": "Customer name"}),
+            "phone": _forms.TextInput(attrs={"placeholder": "Mobile number"}),
+            "email": _forms.EmailInput(attrs={"placeholder": "Email address"}),
+            "address": _forms.Textarea(attrs={"rows": 2, "placeholder": "Address"}),
+        }
+from .models import Fabric
+
+
+class FabricForm(forms.ModelForm):
+    class Meta:
+        model = Fabric
+        fields = ["name", "fabric_type", "color", "unit", "price_per_unit", "stock_quantity"]
+        widgets = {
+            "name": forms.TextInput(attrs={"placeholder": "Product name"}),
+            "fabric_type": forms.TextInput(attrs={"placeholder": "Fabric type e.g. Cotton"}),
+            "color": forms.TextInput(attrs={"placeholder": "Color"}),
+            "unit": forms.Select(),
+            "price_per_unit": forms.NumberInput(attrs={"step": "0.01"}),
+            "stock_quantity": forms.NumberInput(attrs={"step": "0.01"}),
+        }
 
 
 class OrderForm(forms.ModelForm):
@@ -19,6 +48,7 @@ class OrderForm(forms.ModelForm):
             "assigned_tailor",
             "priority",
             "discount_percent",
+            "amount_paid",
             "customer_notes",
         ]
         widgets = {
@@ -46,6 +76,9 @@ class OrderForm(forms.ModelForm):
         self.fields["customer_name"].widget.attrs.setdefault("list", "customer-options")
         self.fields["customer_mobile"].widget.attrs.setdefault("placeholder", "+91 98765 43210")
         self.fields["customer_email"].widget.attrs.setdefault("placeholder", "contact@example.com")
+
+        # configure amount_paid widget
+        self.fields["amount_paid"].widget = _forms.NumberInput(attrs={"step": "0.01", "min": "0"})
 
     def save(self, commit=True):
         customer, _ = Customer.objects.get_or_create(name=self.cleaned_data["customer_name"])
