@@ -22,6 +22,11 @@
       <div class="field">
         <label>Customer Name <span class="required">*</span></label>
         {{ form.customer_name }}
+        <datalist id="customer-options">
+          {% for customer in customers %}
+            <option value="{{ customer.name }}"></option>
+          {% endfor %}
+        </datalist>
       </div>
       <div class="field">
         <label>Mobile Number</label>
@@ -32,7 +37,7 @@
         {{ form.customer_email }}
       </div>
       <div class="field">
-        <label>Shipping Address</label>
+        <label>Address</label>
         {{ form.shipping_address }}
       </div>
     </div>
@@ -102,6 +107,11 @@
         {% endfor %}
       </tbody>
     </table>
+    <datalist id="item-options">
+      {% for item_name in item_names %}
+        <option value="{{ item_name }}"></option>
+      {% endfor %}
+    </datalist>
     <button type="button" class="add-row-btn" id="add-item-row">+ Add Row</button>
 
     <template id="empty-item-row">

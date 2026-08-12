@@ -15,6 +15,19 @@
       {% csrf_token %}
       <button type="submit" class="btn btn-danger">&#128465; Delete Order</button>
     </form>
+    {% if order.is_paid %}
+    <form method="post" action="{% url 'order-mark-unpaid' order.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{% url 'order-detail' order.pk %}">
+      <button type="submit" class="btn btn-outline">&#128179; Mark Unpaid</button>
+    </form>
+    {% else %}
+    <form method="post" action="{% url 'order-mark-paid' order.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{% url 'order-detail' order.pk %}">
+      <button type="submit" class="btn btn-primary">&#128179; Mark Paid</button>
+    </form>
+    {% endif %}
     {% if order.status != "finished" %}
     <form method="post" action="{% url 'order-mark-finished' order.pk %}">
       {% csrf_token %}
@@ -35,12 +48,12 @@
     <div style="margin-top:10px;"><span class="pill pill-{{ order.status }}">&#9679; {{ order.get_status_display }}</span></div>
   </div>
   <div class="card info-card">
-    <div class="stat-label">Delivery Date</div>
-    <div class="stat-value" style="font-size:22px; margin-top:8px;">{{ order.expected_delivery_date|date:"d M Y"|default:"—" }}</div>
+    <div class="stat-label">Payment Status</div>
+    <div style="margin-top:10px;"><span class="pill pill-{{ order.is_paid|yesno:"paid,unpaid" }}">&#9679; {{ order.payment_status_label }}</span></div>
   </div>
   <div class="card info-card">
-    <div class="stat-label">Total Amount</div>
-    <div class="stat-value" style="font-size:22px; margin-top:8px;">&#8377;{{ order.grand_total|intcomma }}</div>
+    <div class="stat-label">Delivery Date</div>
+    <div class="stat-value" style="font-size:22px; margin-top:8px;">{{ order.expected_delivery_date|date:"d M Y"|default:"—" }}</div>
   </div>
 </div>
 

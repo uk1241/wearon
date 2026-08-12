@@ -10,7 +10,15 @@
   <div class="card order-card">
     <div class="order-card-top">
       <span class="order-id">{{ order.order_number }}</span>
-      <span class="pill pill-{{ order.status }}">{{ order.get_status_display }}</span>
+      <div class="status-actions">
+        <span class="pill pill-{{ order.status }}">{{ order.get_status_display }}</span>
+        <span class="pill pill-{{ order.is_paid|yesno:"paid,unpaid" }}">{{ order.payment_status_label }}</span>
+        <form method="post" action="{% url 'order-delete' order.pk %}" class="inline-form">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'expense-list' %}">
+          <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this order and all its expenses?');">Delete</button>
+        </form>
+      </div>
     </div>
     <div class="order-name-row">
       <div>

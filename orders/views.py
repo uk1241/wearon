@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .forms import ExpenseFormSet, OrderForm, OrderItemFormSet
-from .models import Customer, Expense, Order, OrderProgress
+from .models import Customer, Expense, Order, OrderItem, OrderProgress
 
 ORDER_STATUS_TABS = [
     (Order.STATUS_IN_PROGRESS, "In Progress"),
@@ -75,6 +75,13 @@ def order_form_view(request, pk=None):
     order = get_object_or_404(Order, pk=pk) if pk else None
     is_new = order is None
 
+    customers = Customer.objects.order_by("name")
+    item_names = (
+        OrderItem.objects.order_by("item_name")
+        .values_list("item_name", flat=True)
+        .distinct()
+    )
+
     if request.method == "POST":
         form = OrderForm(request.POST, instance=order)
         formset = OrderItemFormSet(request.POST, instance=order, prefix="items")
@@ -92,7 +99,14 @@ def order_form_view(request, pk=None):
     return render(
         request,
         "orders/order_form.html",
-        {"form": form, "formset": formset, "order": order, "is_new": is_new},
+        {
+            "form": form,
+            "formset": formset,
+            "order": order,
+            "is_new": is_new,
+            "customers": customers,
+            "item_names": item_names,
+        },
     )
 
 
@@ -129,9 +143,38 @@ def order_mark_unfinished(request, pk):
 
 @login_required
 @require_POST
+def order_mark_paid(request, pk):
+    order = get_object_or_404(Order, pk=pk)
+    if not order.is_paid:
+        order.is_paid = True
+        order.save()
+    next_url = request.POST.get("next") or request.GET.get("next")
+    if next_url:
+        return redirect(next_url)
+    return redirect("order-detail", pk=order.pk)
+
+
+@login_required
+@require_POST
+def order_mark_unpaid(request, pk):
+    order = get_object_or_404(Order, pk=pk)
+    if order.is_paid:
+        order.is_paid = False
+        order.save()
+    next_url = request.POST.get("next") or request.GET.get("next")
+    if next_url:
+        return redirect(next_url)
+    return redirect("order-detail", pk=order.pk)
+
+
+@login_required
+@require_POST
 def order_delete(request, pk):
     order = get_object_or_404(Order, pk=pk)
     order.delete()
+    next_url = request.POST.get("next") or request.GET.get("next")
+    if next_url:
+        return redirect(next_url)
     return redirect("order-list")
 
 
@@ -226,6 +269,29 @@ def customer_detail(request, pk):
         pk=pk,
     )
     return render(request, "orders/customer_detail.html", {"customer": customer})
+
+
+@login_required
+def customer_export(request, pk):
+    customer = get_object_or_404(
+        Customer.objects.prefetch_related("orders__items", "orders__expenses"),
+        pk=pk,
+    )
+    orders = customer.orders.order_by("-created_at").all()
+    total_revenue = sum((order.grand_total for order in orders), Decimal("0"))
+    total_expenses = sum((order.total_expenses for order in orders), Decimal("0"))
+    net_profit = total_revenue - total_expenses
+    return render(
+        request,
+        "orders/customer_export.html",
+        {
+            "customer": customer,
+            "orders": orders,
+            "total_revenue": total_revenue,
+            "total_expenses": total_expenses,
+            "net_profit": net_profit,
+        },
+    )
 
 
 @login_required

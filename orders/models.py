@@ -68,6 +68,7 @@ class Order(models.Model):
     order_number = models.CharField(max_length=20, unique=True, editable=False)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="orders")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_IN_PROGRESS)
+    is_paid = models.BooleanField(default=False)
     order_date = models.DateField(default=timezone.localdate)
     expected_delivery_date = models.DateField(null=True, blank=True)
     reference_number = models.CharField("Reference / PO Number", max_length=50, blank=True)
@@ -116,6 +117,10 @@ class Order(models.Model):
     @property
     def profit(self):
         return self.grand_total - self.total_expenses
+
+    @property
+    def payment_status_label(self):
+        return "Paid" if self.is_paid else "Unpaid"
 
     @property
     def profit_margin_percent(self):

@@ -43,6 +43,7 @@ class OrderForm(forms.ModelForm):
         self.fields["customer_name"].widget.attrs.setdefault(
             "placeholder", "Select or type customer name"
         )
+        self.fields["customer_name"].widget.attrs.setdefault("list", "customer-options")
         self.fields["customer_mobile"].widget.attrs.setdefault("placeholder", "+91 98765 43210")
         self.fields["customer_email"].widget.attrs.setdefault("placeholder", "contact@example.com")
 
@@ -50,6 +51,9 @@ class OrderForm(forms.ModelForm):
         customer, _ = Customer.objects.get_or_create(name=self.cleaned_data["customer_name"])
         customer.phone = self.cleaned_data.get("customer_mobile", "")
         customer.email = self.cleaned_data.get("customer_email", "")
+        shipping_address = self.cleaned_data.get("shipping_address", "")
+        if shipping_address:
+            customer.address = shipping_address
         customer.save()
 
         order = super().save(commit=False)
@@ -73,6 +77,10 @@ class OrderItemForm(forms.ModelForm):
             "quantity": forms.NumberInput(attrs={"step": "0.01", "min": "0", "class": "item-qty"}),
             "unit_price": forms.NumberInput(attrs={"step": "0.01", "min": "0", "class": "item-rate"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["item_name"].widget.attrs.setdefault("list", "item-options")
 
 
 OrderItemFormSet = inlineformset_factory(

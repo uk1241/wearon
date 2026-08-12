@@ -1,0 +1,103 @@
+{% load static humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Customer Export — {{ customer.name }} — TextileFlow</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    body { background: #f3f5f0; }
+    .export-wrap { max-width: 900px; margin: 20px auto; padding: 24px; background: #fff; }
+    .export-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+    .export-head h1 { margin: 0; }
+    .export-head .meta { text-align: right; }
+    .export-head .meta div { margin-bottom: 6px; }
+    .export-section { margin-bottom: 24px; }
+    .export-section h2 { margin-bottom: 12px; }
+    .export-table th, .export-table td { border-bottom: 1px solid #e2e6dd; padding: 10px; text-align: left; font-size: 13px; }
+    .export-table th { background: #f8faf5; text-transform: uppercase; font-weight: 700; color: #556b58; }
+    .export-table { width: 100%; border-collapse: collapse; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    .summary-card { background: #f8faf5; padding: 14px 16px; border-radius: 14px; }
+    .summary-card .label { font-size: 11px; color: #63705f; text-transform: uppercase; letter-spacing: .06em; }
+    .summary-card .value { font-size: 20px; font-weight: 700; margin-top: 6px; }
+    .print-bar { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 16px; }
+    @media print {
+      .print-bar { display: none; }
+      body { background: #fff; }
+      .export-wrap { box-shadow: none; margin: 0; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="export-wrap">
+    <div class="print-bar">
+      <a href="{% url 'customer-detail' customer.pk %}" class="btn btn-outline">&larr; Back</a>
+      <button class="btn btn-primary" onclick="window.print()">&#128424; Print</button>
+    </div>
+
+    <div class="export-head">
+      <div>
+        <h1>{{ customer.name }}</h1>
+        <p class="text-muted">Complete customer details export</p>
+      </div>
+      <div class="meta">
+        <div>Date: {{ now|date:"d M Y" }}</div>
+        <div>Orders: {{ customer.orders.count }}</div>
+      </div>
+    </div>
+
+    <div class="export-section">
+      <h2>Contact</h2>
+      <div class="field-grid cols-2">
+        <div class="field"><span class="label">Phone</span><div class="v">{{ customer.phone|default:'—' }}</div></div>
+        <div class="field"><span class="label">Email</span><div class="v">{{ customer.email|default:'—' }}</div></div>
+        <div class="field" style="grid-column: span 2;"><span class="label">Address</span><div class="v">{{ customer.address|default:'—' }}</div></div>
+      </div>
+    </div>
+
+    <div class="export-section">
+      <h2>Orders</h2>
+      <table class="export-table">
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Status</th>
+            <th>Payment</th>
+            <th>Delivery</th>
+            <th style="text-align:right;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+          <tr>
+            <td>{{ order.order_number }}</td>
+            <td>{{ order.get_status_display }}</td>
+            <td>{{ order.payment_status_label }}</td>
+            <td>{{ order.expected_delivery_date|date:"d M Y"|default:'—' }}</td>
+            <td style="text-align:right;">&#8377;{{ order.grand_total|intcomma }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-muted">No orders available.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="label">Total Revenue</div>
+        <div class="value">&#8377;{{ total_revenue|intcomma }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Total Expense</div>
+        <div class="value">&#8377;{{ total_expenses|intcomma }}</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Net Value</div>
+        <div class="value">&#8377;{{ net_profit|intcomma }}</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

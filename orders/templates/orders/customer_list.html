@@ -12,7 +12,10 @@
     <div class="order-card-top">
       <span class="order-id">Customer</span>
       {% if first_order %}
-      <span class="pill pill-{{ first_order.status }}">{{ first_order.get_status_display }}</span>
+      <div class="pill-row">
+        <span class="pill pill-{{ first_order.status }}">{{ first_order.get_status_display }}</span>
+        <span class="pill pill-{{ first_order.is_paid|yesno:"paid,unpaid" }}">{{ first_order.payment_status_label }}</span>
+      </div>
       {% else %}
       <span class="pill pill-pending">No Orders</span>
       {% endif %}

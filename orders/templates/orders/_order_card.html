@@ -2,7 +2,10 @@
 <div class="card order-card">
   <div class="order-card-top">
     <span class="order-id">{{ order.order_number }}</span>
-    <span class="pill pill-{{ order.status }}">{{ order.get_status_display }}</span>
+    <div class="pill-row">
+      <span class="pill pill-{{ order.status }}">{{ order.get_status_display }}</span>
+      <span class="pill pill-{{ order.is_paid|yesno:"paid,unpaid" }}">{{ order.payment_status_label }}</span>
+    </div>
   </div>
   <a href="{% url 'order-detail' order.pk %}" class="order-name">{{ order.customer.name }}</a>
   {% with first_item=order.items.first %}

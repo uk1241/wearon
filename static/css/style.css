@@ -268,7 +268,10 @@ a { color: inherit; text-decoration: none; }
 }
 
 .order-card { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-.order-card-top { display: flex; align-items: center; justify-content: space-between; }
+.order-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.status-actions { display: inline-flex; align-items: center; gap: 10px; }
+.inline-form { display: inline-flex; margin: 0; }
+.inline-form .btn { white-space: nowrap; }
 .order-id { font-size: 12px; font-weight: 700; color: var(--muted); }
 .order-name { font-size: 20px; font-weight: 800; margin: 2px 0 4px; }
 .customer-card { min-height: 190px; }
@@ -280,6 +283,14 @@ a { color: inherit; text-decoration: none; }
   font-size: 11px;
   font-weight: 700;
 }
+.pill-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pill-paid { background: var(--green-100); color: var(--green-700); }
+.pill-unpaid { background: var(--red-bg); color: var(--red); }
 
 .pill-pending { background: var(--grey-bg); color: #55594c; }
 .pill-in_progress { background: var(--green-100); color: var(--green-700); }
