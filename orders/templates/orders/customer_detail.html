@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}{{ customer.name }} — Customer Details — TextileFlow{% endblock %}
+{% block content %}
+<a href="{% url 'dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+<div class="page-head-row">
+  <div>
+    <h1 class="page-title">{{ customer.name }}</h1>
+    <p class="page-sub">Customer details and orders.</p>
+  </div>
+</div>
+
+<div class="detail-grid thirds">
+  <div class="card info-card">
+    <h3>Contact</h3>
+    <div class="info-row"><span class="k">Phone</span><span class="v">{{ customer.phone|default:'—' }}</span></div>
+    <div class="info-row"><span class="k">Email</span><span class="v">{{ customer.email|default:'—' }}</span></div>
+    <div class="info-row"><span class="k">Orders</span><span class="v">{{ customer.orders.count }}</span></div>
+  </div>
+  <div class="card info-card">
+    <h3>Company</h3>
+    <div class="info-row"><span class="k">Name</span><span class="v">{{ customer.company_name|default:'—' }}</span></div>
+    <div class="info-row"><span class="k">Address</span><span class="v">{{ customer.address|default:'—' }}</span></div>
+  </div>
+  <div class="card info-card">
+    <h3>Latest Order</h3>
+    {% with latest_order=customer.orders.first %}
+      {% if latest_order %}
+      <div class="info-row"><span class="k">Order</span><span class="v"><a href="{% url 'order-detail' latest_order.pk %}">{{ latest_order.order_number }}</a></span></div>
+      <div class="info-row"><span class="k">Status</span><span class="v">{{ latest_order.get_status_display }}</span></div>
+      <div class="info-row"><span class="k">Total</span><span class="v">&#8377;{{ latest_order.grand_total|intcomma }}</span></div>
+      {% else %}
+      <div class="info-row"><span class="k">Latest Order</span><span class="v">No orders yet.</span></div>
+      {% endif %}
+    {% endwith %}
+  </div>
+</div>
+
+<div class="card info-card">
+  <h3>Orders</h3>
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th>Order</th>
+        <th>Status</th>
+        <th>Delivery</th>
+        <th style="text-align:right;">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for order in customer.orders.all %}
+      <tr>
+        <td><a href="{% url 'order-detail' order.pk %}">{{ order.order_number }}</a></td>
+        <td>{{ order.get_status_display }}</td>
+        <td>{{ order.expected_delivery_date|date:"d M Y"|default:'—' }}</td>
+        <td class="amount-cell">&#8377;{{ order.grand_total|intcomma }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="text-muted">No orders found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

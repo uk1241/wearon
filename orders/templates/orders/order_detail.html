@@ -11,10 +11,19 @@
     <a href="{% url 'order-edit' order.pk %}" class="btn btn-outline">&#9998; Edit Order</a>
     <a href="{% url 'order-expenses' order.pk %}" class="btn btn-outline">&#128179; Expense</a>
     <a href="{% url 'order-invoice' order.pk %}" class="btn btn-outline">&#128424; Print Invoice</a>
+    <form method="post" action="{% url 'order-delete' order.pk %}" onsubmit="return confirm('Delete this order? This action cannot be undone.');">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">&#128465; Delete Order</button>
+    </form>
     {% if order.status != "finished" %}
     <form method="post" action="{% url 'order-mark-finished' order.pk %}">
       {% csrf_token %}
       <button type="submit" class="btn btn-primary">&#10003; Mark Finished</button>
+    </form>
+    {% else %}
+    <form method="post" action="{% url 'order-mark-unfinished' order.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline">&#8634; Undo Complete</button>
     </form>
     {% endif %}
   </div>

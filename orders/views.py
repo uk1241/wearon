@@ -13,24 +13,24 @@ from .forms import ExpenseFormSet, OrderForm, OrderItemFormSet
 from .models import Customer, Expense, Order, OrderProgress
 
 ORDER_STATUS_TABS = [
-    ("all", "All Orders"),
-    (Order.STATUS_PENDING, "Pending"),
     (Order.STATUS_IN_PROGRESS, "In Progress"),
-    (Order.STATUS_FINISHED, "Finished"),
+    (Order.STATUS_FINISHED, "Completed"),
 ]
 
 
 def _filter_by_status(queryset, status):
-    if status and status != "all":
-        return queryset.filter(status=status)
-    return queryset
+    if status not in {Order.STATUS_IN_PROGRESS, Order.STATUS_FINISHED}:
+        status = Order.STATUS_IN_PROGRESS
+    if status == Order.STATUS_IN_PROGRESS:
+        return queryset.filter(status__in=[Order.STATUS_IN_PROGRESS, Order.STATUS_PENDING])
+    return queryset.filter(status=status)
 
 
 @login_required
 def dashboard(request):
     orders = Order.objects.select_related("customer").prefetch_related("items")
     today = date.today()
-    status = request.GET.get("status", "all")
+    status = request.GET.get("status", Order.STATUS_IN_PROGRESS)
 
     todays_orders = orders.filter(order_date=today)
     revenue_today = sum((o.grand_total for o in todays_orders), Decimal("0"))
@@ -40,7 +40,7 @@ def dashboard(request):
 
     context = {
         "total_orders": orders.count(),
-        "pending_count": orders.filter(status=Order.STATUS_PENDING).count(),
+        "in_progress_count": orders.filter(status__in=[Order.STATUS_IN_PROGRESS, Order.STATUS_PENDING]).count(),
         "finished_count": orders.filter(status=Order.STATUS_FINISHED).count(),
         "revenue_today": revenue_today,
         "expenses_today": expenses_today,
@@ -55,13 +55,19 @@ def dashboard(request):
 @login_required
 def order_list(request):
     orders = Order.objects.select_related("customer").prefetch_related("items")
-    status = request.GET.get("status", "all")
+    status = request.GET.get("status", Order.STATUS_IN_PROGRESS)
     context = {
         "orders": _filter_by_status(orders, status),
         "active_status": status,
         "status_tabs": ORDER_STATUS_TABS,
     }
     return render(request, "orders/order_list.html", context)
+
+
+@login_required
+def customer_list(request):
+    customers = Customer.objects.order_by("name").prefetch_related("orders")
+    return render(request, "orders/customer_list.html", {"customers": customers})
 
 
 @login_required
@@ -111,6 +117,25 @@ def order_mark_finished(request, pk):
 
 
 @login_required
+@require_POST
+def order_mark_unfinished(request, pk):
+    order = get_object_or_404(Order, pk=pk)
+    if order.status == Order.STATUS_FINISHED:
+        order.status = Order.STATUS_IN_PROGRESS
+        order.save()
+        OrderProgress.objects.create(order=order, title="Order Reopened")
+    return redirect("order-detail", pk=order.pk)
+
+
+@login_required
+@require_POST
+def order_delete(request, pk):
+    order = get_object_or_404(Order, pk=pk)
+    order.delete()
+    return redirect("order-list")
+
+
+@login_required
 def order_invoice(request, pk):
     order = get_object_or_404(
         Order.objects.select_related("customer").prefetch_related("items"), pk=pk
@@ -147,8 +172,12 @@ def expense_export(request, pk):
 
 @login_required
 def expense_list(request):
-    expenses = Expense.objects.select_related("order", "order__customer").order_by("-created_at")
-    return render(request, "orders/expense_list.html", {"expenses": expenses})
+    orders = (
+        Order.objects.select_related("customer")
+        .prefetch_related("expenses")
+        .order_by("-created_at")
+    )
+    return render(request, "orders/expense_list.html", {"orders": orders})
 
 
 @login_required
@@ -191,8 +220,17 @@ def reports(request):
 
 
 @login_required
+def customer_detail(request, pk):
+    customer = get_object_or_404(
+        Customer.objects.prefetch_related("orders__items", "orders__expenses"),
+        pk=pk,
+    )
+    return render(request, "orders/customer_detail.html", {"customer": customer})
+
+
+@login_required
 def settings_page(request):
-    return render(request, "orders/placeholder.html", {"page_title": "Settings"})
+    return render(request, "orders/settings.html", {"page_title": "Settings"})
 
 
 @login_required

@@ -67,7 +67,7 @@ class Order(models.Model):
 
     order_number = models.CharField(max_length=20, unique=True, editable=False)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="orders")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_IN_PROGRESS)
     order_date = models.DateField(default=timezone.localdate)
     expected_delivery_date = models.DateField(null=True, blank=True)
     reference_number = models.CharField("Reference / PO Number", max_length=50, blank=True)

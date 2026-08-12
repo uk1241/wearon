@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Settings — TextileFlow{% endblock %}
+{% block content %}
+<h1 class="page-title">Settings</h1>
+<div class="card form-card">
+  <h3>Appearance</h3>
+  <div style="display:flex; align-items:center; gap:16px;">
+    <div>
+      <p style="margin:0 0 6px; font-weight:700;">Theme</p>
+      <p style="margin:0; color:var(--muted);">Choose between Light and Dark modes. Your preference is saved in your browser.</p>
+    </div>
+    <div style="margin-left:auto;">
+      <button class="btn" onclick="toggleTheme()" data-theme-toggle>Toggle Theme</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

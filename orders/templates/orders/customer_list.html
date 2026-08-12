@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Customers — TextileFlow{% endblock %}
+{% block content %}
+<h1 class="page-title">Customers</h1>
+<p class="page-sub">Browse customers and view their order details.</p>
+
+<div class="order-grid">
+  {% for customer in customers %}
+  {% with first_order=customer.orders.first %}
+  <a href="{% url 'customer-detail' customer.pk %}" class="card order-card customer-card">
+    <div class="order-card-top">
+      <span class="order-id">Customer</span>
+      {% if first_order %}
+      <span class="pill pill-{{ first_order.status }}">{{ first_order.get_status_display }}</span>
+      {% else %}
+      <span class="pill pill-pending">No Orders</span>
+      {% endif %}
+    </div>
+    <div class="order-name">{{ customer.name }}</div>
+    <div class="kv-row"><span class="k">Orders</span><span class="v">{{ customer.orders.count }}</span></div>
+    <div class="kv-row"><span class="k">Last Order</span><span class="v">{{ first_order.order_number|default:'—' }}</span></div>
+  </a>
+  {% endwith %}
+  {% empty %}
+  <div class="empty-state">No customers available.</div>
+  {% endfor %}
+</div>
+{% endblock %}

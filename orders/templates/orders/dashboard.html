@@ -7,7 +7,7 @@
 
 <div class="stat-grid">
   <div class="card stat-card"><div class="stat-label">Total Orders</div><div class="stat-value">{{ total_orders }}</div></div>
-  <div class="card stat-card"><div class="stat-label">Pending</div><div class="stat-value">{{ pending_count }}</div></div>
+  <div class="card stat-card"><div class="stat-label">In Progress</div><div class="stat-value">{{ in_progress_count }}</div></div>
   <div class="card stat-card"><div class="stat-label">Completed</div><div class="stat-value green">{{ finished_count }}</div></div>
   <div class="card stat-card"><div class="stat-label">Revenue (Today)</div><div class="stat-value">&#8377;{{ revenue_today|intcomma }}</div></div>
   <div class="card stat-card"><div class="stat-label">Expenses (Today)</div><div class="stat-value red">&#8377;{{ expenses_today|intcomma }}</div></div>
@@ -27,7 +27,7 @@
   {% for order in orders %}
     {% include "orders/_order_card.html" %}
   {% empty %}
-    <div class="empty-state">No orders yet. <a href="{% url 'order-create' %}">Create your first order</a>.</div>
+    <div class="empty-state">No orders yet.</div>
   {% endfor %}
 </div>
 {% endblock %}

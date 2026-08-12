@@ -3,38 +3,33 @@
 {% block title %}Expenses — TextileFlow{% endblock %}
 {% block content %}
 <h1 class="page-title">Expenses</h1>
-<p class="page-sub">Every expense logged across all orders.</p>
+<p class="page-sub">View expenses grouped by order, with expense management inside each order card.</p>
 
-<div class="card info-card">
-  <table class="items-table">
-    <thead>
-      <tr>
-        <th>Order</th>
-        <th>Customer</th>
-        <th>Expense</th>
-        <th>Category</th>
-        <th>Qty</th>
-        <th>Unit Cost (&#8377;)</th>
-        <th style="text-align:right;">Total (&#8377;)</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for expense in expenses %}
-      <tr>
-        <td><a href="{% url 'order-expenses' expense.order.pk %}">{{ expense.order.order_number }}</a></td>
-        <td>{{ expense.order.customer.name }}</td>
-        <td>{{ expense.name }}</td>
-        <td>{{ expense.category|default:"—" }}</td>
-        <td>{{ expense.quantity|floatformat:0 }}</td>
-        <td>{{ expense.unit_cost|floatformat:2 }}</td>
-        <td class="amount-cell">{{ expense.total|floatformat:2 }}</td>
-        <td><a href="{% url 'order-expenses' expense.order.pk %}" class="btn btn-sm btn-outline">Manage</a></td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="8" class="text-muted">No expenses logged yet.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="order-grid">
+  {% for order in orders %}
+  <div class="card order-card">
+    <div class="order-card-top">
+      <span class="order-id">{{ order.order_number }}</span>
+      <span class="pill pill-{{ order.status }}">{{ order.get_status_display }}</span>
+    </div>
+    <div class="order-name-row">
+      <div>
+        <div class="order-name">{{ order.customer.name }}</div>
+        <div class="text-muted" style="font-size:13px; margin-top:4px;">{{ order.expected_delivery_date|date:"d M Y"|default:"No delivery date" }}</div>
+      </div>
+      <a href="{% url 'order-expenses' order.pk %}" class="btn btn-sm btn-outline">Manage</a>
+    </div>
+
+    <div class="kv-row"><span class="k">Expense Count</span><span class="v">{{ order.expenses.count }}</span></div>
+    <div class="kv-row"><span class="k">Order Value</span><span class="v">&#8377;{{ order.grand_total|intcomma }}</span></div>
+    <div class="order-total-row"><span>Total Spent</span><span>&#8377;{{ order.total_expenses|intcomma }}</span></div>
+
+    <div class="expense-card-list">
+      <p style="margin:0; color:var(--muted); font-size:13px;">Use the Manage Expenses button to view or edit this order’s expense details.</p>
+    </div>
+  </div>
+  {% empty %}
+  <div class="empty-state">No orders available yet.</div>
+  {% endfor %}
 </div>
 {% endblock %}
