@@ -49,9 +49,12 @@
       <div class="topbar">
         <input class="search-box" type="text" placeholder="Search orders, customers, or items...">
         <div class="topbar-spacer"></div>
-        <div class="icon-btn">&#128276;</div>
-        <div class="avatar">{{ user.username|default:"?"|first|upper }}</div>
-        <a href="{% url 'order-create' %}" class="btn btn-primary">+ Add Order</a>
+        <div class="topbar-actions">
+          <button type="button" class="icon-btn" data-theme-toggle aria-label="Toggle dark mode" title="Toggle dark mode">☀️</button>
+          <div class="icon-btn" aria-label="Notifications" title="Notifications">&#128276;</div>
+          <div class="avatar">{{ user.username|default:"?"|first|upper }}</div>
+          <a href="{% url 'order-create' %}" class="btn btn-primary">+ Add Order</a>
+        </div>
       </div>
       <div class="content">
         {% if messages %}

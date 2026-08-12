@@ -2,13 +2,23 @@
 (function () {
   const THEME_KEY = 'theme';
 
+  function syncToggleButton() {
+    const toggle = document.querySelector('[data-theme-toggle]');
+    if (!toggle) return;
+
+    const isDark = document.documentElement.classList.contains('dark-theme');
+    toggle.textContent = isDark ? '☀️' : '🌙';
+    toggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+    toggle.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+    toggle.setAttribute('aria-pressed', String(isDark));
+  }
+
   function applyTheme(theme) {
     const el = document.documentElement;
-    if (theme === 'dark') {
-      el.classList.add('dark-theme');
-    } else {
-      el.classList.remove('dark-theme');
-    }
+    const isDark = theme === 'dark';
+    el.classList.toggle('dark-theme', isDark);
+    el.setAttribute('data-theme', theme);
+    syncToggleButton();
   }
 
   function current() {
@@ -19,15 +29,19 @@
     const theme = to || (current() === 'dark' ? 'light' : 'dark');
     localStorage.setItem(THEME_KEY, theme);
     applyTheme(theme);
-    // update any toggles on the page
-    const toggle = document.querySelector('[data-theme-toggle]');
-    if (toggle) toggle.textContent = theme === 'dark' ? 'Switch to Light' : 'Switch to Dark';
   };
 
-  // apply on load
-  try {
-    applyTheme(current());
-  } catch (e) {
-    // ignore
-  }
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-theme-toggle]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        window.toggleTheme();
+      });
+    });
+
+    try {
+      applyTheme(current());
+    } catch (e) {
+      // ignore
+    }
+  });
 })();
