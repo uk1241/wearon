@@ -31,10 +31,20 @@
     applyTheme(theme);
   };
 
+  function toggleMobileMenu() {
+    document.body.classList.toggle('mobile-nav-open');
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[data-theme-toggle]').forEach(function (button) {
       button.addEventListener('click', function () {
         window.toggleTheme();
+      });
+    });
+
+    document.querySelectorAll('[data-mobile-menu-toggle]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        toggleMobileMenu();
       });
     });
 

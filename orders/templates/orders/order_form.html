@@ -156,6 +156,49 @@
   </div>
 
   <div class="card form-card">
+    <h3>Payment Methods</h3>
+    <p style="margin-bottom:8px;">Add payer name and payment method. Click + Add Payment to add additional payment entries.</p>
+    {{ payment_formset.management_form }}
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width:36px">#</th>
+          <th>Payer Name</th>
+          <th>Payment Method</th>
+          <th>Details</th>
+          <th style="width:30px"></th>
+        </tr>
+      </thead>
+      <tbody id="payments-body">
+        {% for payment_form in payment_formset %}
+        <tr class="payment-row">
+          <td class="row-num">{{ forloop.counter }}</td>
+          <td>{{ payment_form.payer_name }}</td>
+          <td>{{ payment_form.method }}</td>
+          <td>{{ payment_form.details }}</td>
+          <td>
+            {% if payment_form.instance.pk %}{{ payment_form.DELETE }}{% endif %}
+            {{ payment_form.id }}
+            <button type="button" class="row-remove" onclick="removeFormRow(this, 'payments-body')">&times;</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <button type="button" class="add-row-btn" id="add-payment-row">+ Add Payment</button>
+
+    <template id="empty-payment-row">
+      <tr class="payment-row">
+        <td class="row-num"></td>
+        <td>{{ payment_formset.empty_form.payer_name }}</td>
+        <td>{{ payment_formset.empty_form.method }}</td>
+        <td>{{ payment_formset.empty_form.details }}</td>
+        <td><button type="button" class="row-remove" onclick="removeFormRow(this, 'payments-body')">&times;</button></td>
+      </tr>
+    </template>
+  </div>
+
+  <div class="card form-card">
     <h3>Notes &amp; Terms</h3>
     <div class="field">
       <label>Customer Notes</label>
@@ -163,10 +206,11 @@
     </div>
   </div>
 
-  {% if form.non_field_errors or formset.non_form_errors %}
+  {% if form.non_field_errors or formset.non_form_errors or payment_formset.non_form_errors %}
     <div class="card" style="padding:14px; color:#c0392b; margin-bottom:16px;">
       {{ form.non_field_errors }}
       {{ formset.non_form_errors }}
+      {{ payment_formset.non_form_errors }}
     </div>
   {% endif %}
 

@@ -73,7 +73,7 @@
           <tr>
             <td>{{ order.order_number }}</td>
             <td>{{ order.get_status_display }}</td>
-            <td>{{ order.payment_status_label }}</td>
+            <td>{{ order.payment_status_label }}<br><small>Paid &#8377;{{ order.amount_paid|intcomma }} / Due &#8377;{{ order.amount_due|intcomma }}</small></td>
             <td>{{ order.expected_delivery_date|date:"d M Y"|default:'—' }}</td>
             <td style="text-align:right;">&#8377;{{ order.grand_total|intcomma }}</td>
           </tr>

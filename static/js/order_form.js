@@ -64,6 +64,23 @@
     recalcTotals();
   }
 
+  function addPaymentRow() {
+    var totalFormsInput = document.getElementById("id_payments-TOTAL_FORMS");
+    if (!totalFormsInput) return;
+    var index = parseInt(totalFormsInput.value, 10);
+    var templateEl = document.getElementById("empty-payment-row");
+    var html = templateEl.innerHTML.split("__prefix__").join(index);
+
+    var wrapper = document.createElement("tbody");
+    wrapper.innerHTML = html.trim();
+    var newRow = wrapper.querySelector("tr");
+    var rowNum = newRow.querySelector(".row-num");
+    if (rowNum) rowNum.textContent = index + 1;
+
+    document.getElementById("payments-body").appendChild(newRow);
+    totalFormsInput.value = index + 1;
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     recalcTotals();
 
@@ -99,7 +116,23 @@
     var amountPaidInput = document.querySelector('input[name="amount_paid"]');
     if (amountPaidInput) amountPaidInput.addEventListener("input", recalcTotals);
 
+    var paymentMethodSelect = document.querySelector('select[name="payment_method"]');
+    var paymentDetailsRow = document.getElementById("payment-details-row");
+    if (paymentMethodSelect) {
+      function updatePaymentDetailsVisibility() {
+        if (paymentMethodSelect.value === "other") {
+          paymentDetailsRow.style.display = "flex";
+        } else {
+          paymentDetailsRow.style.display = "none";
+        }
+      }
+      paymentMethodSelect.addEventListener("change", updatePaymentDetailsVisibility);
+      updatePaymentDetailsVisibility();
+    }
+
     var addBtn = document.getElementById("add-item-row");
     if (addBtn) addBtn.addEventListener("click", addItemRow);
+    var addPaymentBtn = document.getElementById("add-payment-row");
+    if (addPaymentBtn) addPaymentBtn.addEventListener("click", addPaymentRow);
   });
 })();

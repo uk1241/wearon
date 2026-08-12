@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
 
-from .models import Customer, Expense, Order, OrderItem
+from .models import Customer, Expense, Order, OrderItem, Payment
 from .models import Fabric
 from django import forms as _forms
 
@@ -58,6 +58,7 @@ class OrderForm(forms.ModelForm):
             "shipping_address": forms.Textarea(attrs={"rows": 2, "placeholder": "123 Industrial Estate, Sector 4..."}),
             "assigned_tailor": forms.TextInput(attrs={"placeholder": "e.g. Ramesh Kumar"}),
             "discount_percent": forms.NumberInput(attrs={"step": "0.01", "min": "0", "max": "100"}),
+            "amount_paid": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
             "customer_notes": forms.Textarea(
                 attrs={"rows": 3, "placeholder": "Notes to appear on the invoice or order receipt..."}
             ),
@@ -79,6 +80,7 @@ class OrderForm(forms.ModelForm):
 
         # configure amount_paid widget
         self.fields["amount_paid"].widget = _forms.NumberInput(attrs={"step": "0.01", "min": "0"})
+        pass
 
     def save(self, commit=True):
         customer, _ = Customer.objects.get_or_create(name=self.cleaned_data["customer_name"])
@@ -118,6 +120,30 @@ class OrderItemForm(forms.ModelForm):
 
 OrderItemFormSet = inlineformset_factory(
     Order, OrderItem, form=OrderItemForm, extra=1, can_delete=True
+)
+
+
+class PaymentForm(forms.ModelForm):
+    class Meta:
+        model = Payment
+        fields = ["payer_name", "method", "details"]
+        widgets = {
+            "payer_name": forms.TextInput(
+                attrs={"placeholder": "Payer name", "class": "payment-name"}
+            ),
+            "method": forms.Select(attrs={"class": "payment-method-select"}),
+            "details": forms.TextInput(
+                attrs={"placeholder": "Payment reference or note", "class": "payment-details"}
+            ),
+        }
+
+
+PaymentFormSet = inlineformset_factory(
+    Order,
+    Payment,
+    form=PaymentForm,
+    extra=1,
+    can_delete=True,
 )
 
 

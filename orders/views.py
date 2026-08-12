@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
-from .forms import ExpenseFormSet, OrderForm, OrderItemFormSet
+from .forms import ExpenseFormSet, OrderForm, OrderItemFormSet, PaymentFormSet
 from .forms import FabricForm, CustomerForm
 from .models import Customer, Expense, Order, OrderItem, OrderProgress, Fabric
 from django.db.models import Count
@@ -104,16 +104,22 @@ def order_form_view(request, pk=None):
     if request.method == "POST":
         form = OrderForm(request.POST, instance=order)
         formset = OrderItemFormSet(request.POST, instance=order, prefix="items")
-        if form.is_valid() and formset.is_valid():
-            order = form.save()
+        payment_formset = PaymentFormSet(request.POST, instance=order, prefix="payments")
+        if form.is_valid() and formset.is_valid() and payment_formset.is_valid():
+            order = form.save(commit=False)
+            order.save()
             formset.instance = order
             formset.save()
+            order.save()
+            payment_formset.instance = order
+            payment_formset.save()
             if is_new:
                 OrderProgress.objects.create(order=order, title="Order Created")
             return redirect("order-detail", pk=order.pk)
     else:
         form = OrderForm(instance=order)
         formset = OrderItemFormSet(instance=order, prefix="items")
+        payment_formset = PaymentFormSet(instance=order, prefix="payments")
 
     return render(
         request,
@@ -121,6 +127,7 @@ def order_form_view(request, pk=None):
         {
             "form": form,
             "formset": formset,
+            "payment_formset": payment_formset,
             "order": order,
             "is_new": is_new,
             "customers": customers,

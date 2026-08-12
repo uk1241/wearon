@@ -15,6 +15,8 @@
   {% endif %}
   {% endwith %}
   <div class="kv-row"><span class="k">Delivery</span><span class="v">{{ order.expected_delivery_date|date:"d M Y"|default:"—" }}</span></div>
+  <div class="kv-row"><span class="k">Paid</span><span class="v">&#8377;{{ order.amount_paid|intcomma }}</span></div>
+  <div class="kv-row"><span class="k">Due</span><span class="v">&#8377;{{ order.amount_due|intcomma }}</span></div>
   <div class="order-total-row"><span>Total Value</span><span>&#8377;{{ order.grand_total|intcomma }}</span></div>
   <div class="progress-dots">
     {% if order.status == "finished" %}

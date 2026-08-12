@@ -65,6 +65,21 @@ class Order(models.Model):
         (PRIORITY_HIGH, "High"),
     ]
 
+    PAYMENT_METHOD_BANK = "bank_transfer"
+    PAYMENT_METHOD_CHECK = "check"
+    PAYMENT_METHOD_CARD = "card"
+    PAYMENT_METHOD_ONLINE = "online_payment"
+    PAYMENT_METHOD_OTHER = "other"
+
+    PAYMENT_METHOD_CHOICES = [
+        ("", "Select payment method"),
+        (PAYMENT_METHOD_BANK, "Bank Transfer"),
+        (PAYMENT_METHOD_CHECK, "Check"),
+        (PAYMENT_METHOD_CARD, "Card"),
+        (PAYMENT_METHOD_ONLINE, "Online Payment"),
+        (PAYMENT_METHOD_OTHER, "Other"),
+    ]
+
     order_number = models.CharField(max_length=20, unique=True, editable=False)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="orders")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_IN_PROGRESS)
@@ -77,6 +92,13 @@ class Order(models.Model):
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default=PRIORITY_MEDIUM)
     discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    payment_method = models.CharField(
+        max_length=30,
+        choices=PAYMENT_METHOD_CHOICES,
+        blank=True,
+        default="",
+    )
+    payment_method_details = models.CharField(max_length=255, blank=True)
     customer_notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -111,6 +133,13 @@ class Order(models.Model):
         return self.subtotal - self.discount_amount
 
     @property
+    def amount_due(self):
+        due = self.grand_total - self.amount_paid
+        if due <= Decimal("0"):
+            return Decimal("0.00")
+        return due.quantize(Decimal("0.01"))
+
+    @property
     def total_expenses(self):
         total = sum((expense.total for expense in self.expenses.all()), Decimal("0"))
         return total.quantize(Decimal("0.01"))
@@ -121,7 +150,29 @@ class Order(models.Model):
 
     @property
     def payment_status_label(self):
-        return "Paid" if self.is_paid else "Unpaid"
+        if self.amount_paid >= self.grand_total and self.grand_total > Decimal("0"):
+            return "Paid"
+        if self.amount_paid > Decimal("0"):
+            return "Partial"
+        return "Unpaid"
+
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            last_order = Order.objects.order_by("id").last()
+            next_id = (last_order.id + 1) if last_order else 1
+            self.order_number = f"ORD-{next_id:04d}"
+
+        created = self.pk is None
+        if created:
+            super().save(*args, **kwargs)
+            return
+
+        if self.grand_total > Decimal("0") and self.amount_paid >= self.grand_total:
+            self.is_paid = True
+        else:
+            self.is_paid = False
+
+        super().save(*args, **kwargs)
 
     @property
     def profit_margin_percent(self):
@@ -146,6 +197,25 @@ class OrderItem(models.Model):
     @property
     def subtotal(self):
         return self.quantity * self.unit_price
+
+
+class Payment(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="payments")
+    payer_name = models.CharField(max_length=150, blank=True)
+    method = models.CharField(
+        max_length=30,
+        choices=Order.PAYMENT_METHOD_CHOICES,
+        blank=True,
+        default="",
+    )
+    details = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        label = self.payer_name or "Payment"
+        return f"{label} ({self.method})"
 
 
 class OrderProgress(models.Model):

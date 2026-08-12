@@ -11,6 +11,7 @@
   <div class="actions-row">
     <a href="{% url 'customer-export' customer.pk %}" class="btn btn-outline">&#128438; Export / Print</a>
   </div>
+</div>
 <div class="detail-grid thirds">
   <div class="card info-card">
     <h3>Contact</h3>
@@ -29,6 +30,8 @@
       <div class="info-row"><span class="k">Order</span><span class="v"><a href="{% url 'order-detail' latest_order.pk %}">{{ latest_order.order_number }}</a></span></div>
       <div class="info-row"><span class="k">Status</span><span class="v">{{ latest_order.get_status_display }}</span></div>
       <div class="info-row"><span class="k">Payment</span><span class="v">{{ latest_order.payment_status_label }}</span></div>
+      <div class="info-row"><span class="k">Paid</span><span class="v">&#8377;{{ latest_order.amount_paid|intcomma }}</span></div>
+      <div class="info-row"><span class="k">Due</span><span class="v">&#8377;{{ latest_order.amount_due|intcomma }}</span></div>
       <div class="info-row"><span class="k">Total</span><span class="v">&#8377;{{ latest_order.grand_total|intcomma }}</span></div>
       {% else %}
       <div class="info-row"><span class="k">Latest Order</span><span class="v">No orders yet.</span></div>
@@ -55,7 +58,10 @@
       <tr>
         <td><a href="{% url 'order-detail' order.pk %}">{{ order.order_number }}</a></td>
         <td>{{ order.get_status_display }}</td>
-        <td>{{ order.payment_status_label }}</td>
+        <td>
+          {{ order.payment_status_label }}<br>
+          <small>Paid &#8377;{{ order.amount_paid|intcomma }} / Due &#8377;{{ order.amount_due|intcomma }}</small>
+        </td>
         <td>{{ order.expected_delivery_date|date:"d M Y"|default:'—' }}</td>
         <td class="amount-cell">&#8377;{{ order.grand_total|intcomma }}</td>
         <td>

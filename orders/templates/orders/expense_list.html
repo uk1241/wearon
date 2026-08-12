@@ -28,8 +28,8 @@
       <a href="{% url 'order-expenses' order.pk %}" class="btn btn-sm btn-outline">Manage</a>
     </div>
 
-    <div class="kv-row"><span class="k">Expense Count</span><span class="v">{{ order.expenses.count }}</span></div>
-    <div class="kv-row"><span class="k">Order Value</span><span class="v">&#8377;{{ order.grand_total|intcomma }}</span></div>
+    <div class="kv-row"><span class="k">Quantity</span><span class="v">{% with first_item=order.items.first %}{% if first_item %}{{ first_item.quantity|floatformat:0 }}{% else %}&mdash;{% endif %}{% endwith %}</span></div>
+    <div class="kv-row"><span class="k">Delivery</span><span class="v">{{ order.expected_delivery_date|date:"d M Y"|default:"—" }}</span></div>
     <div class="order-total-row"><span>Total Spent</span><span>&#8377;{{ order.total_expenses|intcomma }}</span></div>
 
     <div class="expense-card-list">
