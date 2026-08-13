@@ -1,6 +1,16 @@
 from django.contrib import admin
 
-from .models import Customer, Expense, Fabric, Order, OrderItem, OrderProgress
+from .models import (
+    Customer,
+    Employee,
+    EmployeeAttendance,
+    Expense,
+    Fabric,
+    Order,
+    OrderItem,
+    OrderProgress,
+    Payroll,
+)
 
 
 @admin.register(Customer)
@@ -47,6 +57,27 @@ class OrderAdmin(admin.ModelAdmin):
             OrderProgress.objects.create(order=obj, title="Order Created")
         elif status_changed and obj.status == Order.STATUS_FINISHED:
             OrderProgress.objects.create(order=obj, title="Order Finished")
+
+
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = ("employee_id", "name", "department", "designation", "phone", "monthly_salary", "status")
+    list_filter = ("status", "department")
+    search_fields = ("name", "employee_id", "email", "phone")
+
+
+@admin.register(EmployeeAttendance)
+class EmployeeAttendanceAdmin(admin.ModelAdmin):
+    list_display = ("employee", "date", "status", "check_in", "check_out", "work_hours")
+    list_filter = ("status", "date")
+    search_fields = ("employee__name", "remarks")
+
+
+@admin.register(Payroll)
+class PayrollAdmin(admin.ModelAdmin):
+    list_display = ("employee", "pay_period_start", "pay_period_end", "present_days", "basic_salary", "net_pay", "payment_status")
+    list_filter = ("payment_status", "pay_period_start")
+    search_fields = ("employee__name", "notes")
 
 
 @admin.register(Expense)

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}{{ employee.name }} — TextileFlow{% endblock %}
+{% block content %}
+<div class="employee-detail-page">
+  <div class="employee-detail-header">
+    <div>
+      <h1 class="page-title">{{ employee.name }}</h1>
+      <p class="page-sub">{{ employee.employee_id }} • {{ employee.department|default:'Department not set' }}</p>
+    </div>
+
+    <div class="employee-detail-actions">
+      <a href="{% url 'employee-attendance-create' %}?employee={{ employee.pk }}" class="btn btn-primary">+ Mark Attendance</a>
+      <a href="{% url 'payroll-create' %}?employee={{ employee.pk }}" class="btn btn-outline">+ Add Payroll</a>
+      <a href="{% url 'employee-list' %}" class="btn btn-outline">Back to Employees</a>
+    </div>
+  </div>
+
+  <div class="employee-detail-grid">
+    <div class="card employee-section">
+      <h3>Employee Details</h3>
+      <div class="employee-summary-list">
+        <div class="kv-row"><span class="k">Employee ID</span><span class="v">{{ employee.employee_id }}</span></div>
+        <div class="kv-row"><span class="k">Designation</span><span class="v">{{ employee.designation|default:'—' }}</span></div>
+        <div class="kv-row"><span class="k">Phone</span><span class="v">{{ employee.phone|default:'—' }}</span></div>
+        <div class="kv-row"><span class="k">Email</span><span class="v">{{ employee.email|default:'—' }}</span></div>
+        <div class="kv-row"><span class="k">Join Date</span><span class="v">{{ employee.joining_date }}</span></div>
+        <div class="kv-row"><span class="k">Monthly Salary</span><span class="v">₹{{ employee.monthly_salary|floatformat:2 }}</span></div>
+        <div class="kv-row"><span class="k">Status</span><span class="v">{{ employee.get_status_display }}</span></div>
+        <div class="kv-row"><span class="k">Address</span><span class="v">{{ employee.address|default:'—' }}</span></div>
+      </div>
+    </div>
+
+    <div class="card employee-section">
+      <h3>Attendance Summary</h3>
+      {% if attendance_records %}
+        {% for record in attendance_records|slice:':5' %}
+        <div class="kv-row employee-summary-row">
+          <span class="k">{{ record.date }}</span>
+          <span class="v">{{ record.get_status_display }} • {{ record.work_hours }} hrs</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="empty-state">No attendance records yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card employee-section employee-history-card">
+    <h3>Attendance History</h3>
+    <div class="employee-table-wrap">
+      <table class="employee-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Check In</th>
+            <th>Check Out</th>
+            <th>Hours</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in attendance_records %}
+          <tr>
+            <td>{{ record.date }}</td>
+            <td>{{ record.get_status_display }}</td>
+            <td>{{ record.check_in|default:'—' }}</td>
+            <td>{{ record.check_out|default:'—' }}</td>
+            <td>{{ record.work_hours }}</td>
+            <td><a href="{% url 'employee-attendance-edit' record.pk %}" class="btn btn-sm btn-outline">Edit</a></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="empty-row">No attendance entries found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card employee-section employee-history-card">
+    <h3>Payroll History</h3>
+    <div class="employee-table-wrap">
+      <table class="employee-table">
+        <thead>
+          <tr>
+            <th>Period</th>
+            <th>Present</th>
+            <th>Basic</th>
+            <th>Net Pay</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payroll in payroll_records %}
+          <tr>
+            <td>{{ payroll.pay_period_start }} to {{ payroll.pay_period_end }}</td>
+            <td>{{ payroll.present_days }}/{{ payroll.working_days }}</td>
+            <td>₹{{ payroll.basic_salary|floatformat:2 }}</td>
+            <td>₹{{ payroll.net_pay|floatformat:2 }}</td>
+            <td>{{ payroll.get_payment_status_display }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="empty-row">No payroll entries found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -25,6 +25,7 @@
         <li><a href="{% url 'order-list' %}" class="{% if request.resolver_match.url_name in 'order-list,order-detail,order-create,order-edit' %}active{% endif %}"><span class="icon">&#9776;</span> Orders</a></li>
         <li><a href="{% url 'customer-list' %}" class="{% if request.resolver_match.url_name in 'customer-list,customer-detail' %}active{% endif %}"><span class="icon">&#128100;</span> Customers</a></li>
         <li><a href="{% url 'product-list' %}" class="{% if request.resolver_match.url_name == 'product-list' %}active{% endif %}"><span class="icon">&#128203;</span> Products</a></li>
+        <li><a href="{% url 'employee-list' %}" class="{% if request.resolver_match.url_name in 'employee-list,employee-create,employee-attendance-list,employee-attendance-create,payroll-list,payroll-create' %}active{% endif %}"><span class="icon">&#128104;</span> Employees</a></li>
         <li><a href="{% url 'expense-list' %}" class="{% if request.resolver_match.url_name in 'expense-list,order-expenses' %}active{% endif %}"><span class="icon">&#128179;</span> Expenses</a></li>
         <li><a href="{% url 'reports' %}" class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}"><span class="icon">&#128202;</span> Reports</a></li>
       </ul>

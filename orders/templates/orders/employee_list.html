@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Employees — TextileFlow{% endblock %}
+{% block content %}
+<h1 class="page-title">Employees</h1>
+<p class="page-sub">Manage employee details, attendance, and payroll.</p>
+
+<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+  <a href="{% url 'employee-create' %}?next={% url 'employee-list' %}" class="btn btn-primary">+ Add Employee</a>
+  <a href="{% url 'employee-attendance-create' %}" class="btn btn-outline">+ Mark Attendance</a>
+  <a href="{% url 'payroll-create' %}" class="btn btn-outline">+ Add Payroll</a>
+</div>
+
+<div class="order-grid">
+  {% for employee in employees %}
+  <div class="card order-card employee-card">
+    <div class="order-card-top">
+      <span class="order-id">{{ employee.employee_id }}</span>
+      <span class="pill pill-{{ employee.status }}">{{ employee.get_status_display }}</span>
+    </div>
+    <div class="order-name">
+      <a href="{% url 'employee-detail' employee.pk %}" class="employee-name-link">{{ employee.name }}</a>
+    </div>
+    <div class="kv-row"><span class="k">Department</span><span class="v">{{ employee.department|default:'—' }}</span></div>
+    <div class="kv-row"><span class="k">Designation</span><span class="v">{{ employee.designation|default:'—' }}</span></div>
+    <div class="kv-row"><span class="k">Phone</span><span class="v">{{ employee.phone|default:'—' }}</span></div>
+    <div class="kv-row"><span class="k">Salary</span><span class="v">₹{{ employee.monthly_salary|floatformat:2 }}</span></div>
+    <div class="actions-row" style="margin-top:8px;">
+      <a href="{% url 'employee-detail' employee.pk %}" class="btn btn-sm btn-outline">View</a>
+      <a href="{% url 'employee-attendance-create' %}?employee={{ employee.pk }}" class="btn btn-sm btn-outline">Attendance</a>
+      <a href="{% url 'payroll-create' %}?employee={{ employee.pk }}" class="btn btn-sm btn-outline">Payroll</a>
+    </div>
+  </div>
+  {% empty %}
+  <div class="empty-state">No employees available.</div>
+  {% endfor %}
+</div>
+{% endblock %}

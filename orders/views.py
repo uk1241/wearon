@@ -1,4 +1,5 @@
 import csv
+from collections import defaultdict
 from datetime import date
 from decimal import Decimal
 
@@ -8,11 +9,30 @@ from django.db.utils import OperationalError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import JsonResponse
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from .forms import ExpenseFormSet, OrderForm, OrderItemFormSet, PaymentFormSet
+from .forms import (
+    ExpenseFormSet,
+    EmployeeAttendanceForm,
+    EmployeeForm,
+    OrderForm,
+    OrderItemFormSet,
+    PaymentFormSet,
+    PayrollForm,
+)
 from .forms import FabricForm, CustomerForm
-from .models import Customer, Expense, Order, OrderItem, OrderProgress, Fabric
+from .models import (
+    Customer,
+    Employee,
+    EmployeeAttendance,
+    Expense,
+    Order,
+    OrderItem,
+    OrderProgress,
+    Fabric,
+    Payroll,
+)
 from django.db.models import Count
 
 ORDER_STATUS_TABS = [
@@ -33,15 +53,46 @@ def _filter_by_status(queryset, status):
 def dashboard(request):
     orders = Order.objects.select_related("customer").prefetch_related("items", "expenses")
     today = date.today()
-    status = request.GET.get("status", Order.STATUS_IN_PROGRESS)
-
-    todays_orders = orders.filter(order_date=today)
-    total_revenue = sum((o.grand_total for o in orders), Decimal("0"))
+    active_employee_count = Employee.objects.filter(status=Employee.EMPLOYEE_STATUS_ACTIVE).count()
+    today_present_count = EmployeeAttendance.objects.filter(
+        date=today,
+        status__in=[EmployeeAttendance.ATTENDANCE_PRESENT, EmployeeAttendance.ATTENDANCE_HALF_DAY],
+    ).count()
+    total_revenue = sum((o.grand_total for o in orders), Decimal("0")).quantize(Decimal("0.01"))
     total_expenses = sum((o.total_expenses for o in orders), Decimal("0")).quantize(Decimal("0.01"))
-    revenue_today = sum((o.grand_total for o in todays_orders), Decimal("0"))
+    revenue_today = sum((o.grand_total for o in orders.filter(order_date=today)), Decimal("0")).quantize(
+        Decimal("0.01")
+    )
     expenses_today = sum(
         (e.total for e in Expense.objects.filter(created_at__date=today)), Decimal("0")
     ).quantize(Decimal("0.01"))
+    payroll_this_month = sum(
+        (p.net_pay for p in Payroll.objects.filter(pay_period_start__month=today.month, pay_period_start__year=today.year)),
+        Decimal("0"),
+    ).quantize(Decimal("0.01"))
+
+    monthly_sales = defaultdict(Decimal)
+    for order in Order.objects.filter(order_date__year=today.year):
+        month_key = order.order_date.strftime("%b")
+        monthly_sales[month_key] += order.grand_total
+
+    sales_chart_data = []
+    for i in range(5, -1, -1):
+        month_date = today.replace(day=1)
+        if i > 0:
+            month_date = month_date.replace(month=month_date.month - i)
+        else:
+            month_date = month_date
+        month_label = month_date.strftime("%b")
+        month_value = monthly_sales.get(month_label, Decimal("0"))
+        sales_chart_data.append({"label": month_label, "value": month_value.quantize(Decimal("0.01"))})
+
+    max_sales = max((item["value"] for item in sales_chart_data), default=Decimal("1"))
+    for item in sales_chart_data:
+        if item["value"] <= 0:
+            item["percent"] = 0
+        else:
+            item["percent"] = (item["value"] / max_sales * 100).quantize(Decimal("0.1"))
 
     context = {
         "total_orders": orders.count(),
@@ -52,9 +103,12 @@ def dashboard(request):
         "total_revenue": total_revenue,
         "total_expenses": total_expenses,
         "net_profit": total_revenue - total_expenses,
-        "orders": _filter_by_status(orders, status)[:30],
-        "active_status": status,
-        "status_tabs": ORDER_STATUS_TABS,
+        "active_employee_count": active_employee_count,
+        "today_present_count": today_present_count,
+        "payroll_this_month": payroll_this_month,
+        "sales_chart_data": sales_chart_data,
+        "sales_chart_max": max_sales,
+        "orders": orders[:8],
     }
     return render(request, "orders/dashboard.html", context)
 
@@ -81,6 +135,96 @@ def customer_list(request):
 def product_list(request):
     products = Fabric.objects.order_by("name").annotate(used_count=Count("order_items"))
     return render(request, "orders/product_list.html", {"products": products, "next_url": request.get_full_path()})
+
+
+@login_required
+def employee_list(request):
+    employees = Employee.objects.order_by("name")
+    return render(request, "orders/employee_list.html", {"employees": employees})
+
+
+@login_required
+def employee_create(request):
+    next_url = request.GET.get("next") or request.POST.get("next") or None
+    if request.method == "POST":
+        form = EmployeeForm(request.POST)
+        if form.is_valid():
+            employee = form.save()
+            if next_url:
+                return redirect(next_url)
+            attendance_url = reverse("employee-attendance-create") + f"?employee={employee.pk}"
+            return redirect(attendance_url)
+    else:
+        form = EmployeeForm()
+    return render(request, "orders/employee_form.html", {"form": form, "next": next_url})
+
+
+@login_required
+def employee_detail(request, pk):
+    employee = get_object_or_404(
+        Employee.objects.prefetch_related("attendance_records", "payrolls"),
+        pk=pk,
+    )
+    attendance_records = employee.attendance_records.order_by("-date")
+    payroll_records = employee.payrolls.order_by("-pay_period_end")
+    return render(
+        request,
+        "orders/employee_detail.html",
+        {"employee": employee, "attendance_records": attendance_records, "payroll_records": payroll_records},
+    )
+
+
+@login_required
+def employee_attendance_list(request):
+    attendances = EmployeeAttendance.objects.select_related("employee").order_by("-date")
+    return render(request, "orders/employee_attendance_list.html", {"attendances": attendances})
+
+
+@login_required
+def employee_attendance_create(request):
+    employee_id = request.GET.get("employee") or request.POST.get("employee")
+    if request.method == "POST":
+        form = EmployeeAttendanceForm(request.POST)
+        if form.is_valid():
+            attendance = form.save()
+            return redirect("employee-attendance-edit", pk=attendance.pk)
+    else:
+        initial = {"employee": employee_id} if employee_id else {}
+        form = EmployeeAttendanceForm(initial=initial)
+    return render(request, "orders/employee_attendance_form.html", {"form": form})
+
+
+@login_required
+def employee_attendance_edit(request, pk):
+    attendance = get_object_or_404(EmployeeAttendance.objects.select_related("employee"), pk=pk)
+    if request.method == "POST":
+        form = EmployeeAttendanceForm(request.POST, instance=attendance)
+        if form.is_valid():
+            form.save()
+            return redirect("employee-detail", pk=attendance.employee.pk)
+    else:
+        form = EmployeeAttendanceForm(instance=attendance)
+    return render(request, "orders/employee_attendance_form.html", {"form": form, "attendance": attendance, "editing": True})
+
+
+@login_required
+def payroll_list(request):
+    payrolls = Payroll.objects.select_related("employee").order_by("-pay_period_end")
+    return render(request, "orders/payroll_list.html", {"payrolls": payrolls})
+
+
+@login_required
+def payroll_create(request):
+    employee_id = request.GET.get("employee") or request.POST.get("employee")
+    if request.method == "POST":
+        form = PayrollForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("payroll-list")
+    else:
+        initial = {"employee": employee_id} if employee_id else {}
+        form = PayrollForm(initial=initial)
+    return render(request, "orders/payroll_form.html", {"form": form})
 
 
 @login_required

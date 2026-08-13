@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
 
-from .models import Customer, Expense, Order, OrderItem, Payment
+from .models import Customer, Employee, EmployeeAttendance, Expense, Order, OrderItem, Payment, Payroll
 from .models import Fabric
 from django import forms as _forms
 
@@ -158,6 +158,83 @@ class ExpenseForm(forms.ModelForm):
             ),
             "quantity": forms.NumberInput(attrs={"step": "0.01", "min": "0", "class": "exp-qty"}),
             "unit_cost": forms.NumberInput(attrs={"step": "0.01", "min": "0", "class": "exp-cost"}),
+        }
+
+
+class EmployeeForm(forms.ModelForm):
+    class Meta:
+        model = Employee
+        fields = [
+            "name",
+            "department",
+            "designation",
+            "phone",
+            "email",
+            "address",
+            "joining_date",
+            "monthly_salary",
+            "status",
+        ]
+        widgets = {
+            "name": forms.TextInput(attrs={"placeholder": "Employee name"}),
+            "department": forms.TextInput(attrs={"placeholder": "Department"}),
+            "designation": forms.TextInput(attrs={"placeholder": "Designation"}),
+            "phone": forms.TextInput(attrs={"placeholder": "Mobile number"}),
+            "email": forms.EmailInput(attrs={"placeholder": "Email address"}),
+            "address": forms.Textarea(attrs={"rows": 3, "placeholder": "Address"}),
+            "joining_date": forms.DateInput(attrs={"type": "date"}),
+            "monthly_salary": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
+            "status": forms.Select(),
+        }
+
+
+class EmployeeAttendanceForm(forms.ModelForm):
+    class Meta:
+        model = EmployeeAttendance
+        fields = ["employee", "date", "check_in", "check_out", "status", "work_hours", "remarks"]
+        widgets = {
+            "employee": forms.Select(),
+            "date": forms.DateInput(attrs={"type": "date"}),
+            "check_in": forms.TimeInput(attrs={"type": "time"}),
+            "check_out": forms.TimeInput(attrs={"type": "time"}),
+            "status": forms.Select(),
+            "work_hours": forms.NumberInput(attrs={"step": "0.25", "min": "0"}),
+            "remarks": forms.TextInput(attrs={"placeholder": "Remarks"}),
+        }
+
+
+class PayrollForm(forms.ModelForm):
+    class Meta:
+        model = Payroll
+        fields = [
+            "employee",
+            "pay_period_start",
+            "pay_period_end",
+            "present_days",
+            "working_days",
+            "basic_salary",
+            "allowances",
+            "overtime",
+            "deductions",
+            "net_pay",
+            "payment_status",
+            "payment_date",
+            "notes",
+        ]
+        widgets = {
+            "employee": forms.Select(),
+            "pay_period_start": forms.DateInput(attrs={"type": "date"}),
+            "pay_period_end": forms.DateInput(attrs={"type": "date"}),
+            "present_days": forms.NumberInput(attrs={"min": "0"}),
+            "working_days": forms.NumberInput(attrs={"min": "0"}),
+            "basic_salary": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
+            "allowances": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
+            "overtime": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
+            "deductions": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
+            "net_pay": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
+            "payment_status": forms.Select(),
+            "payment_date": forms.DateInput(attrs={"type": "date"}),
+            "notes": forms.Textarea(attrs={"rows": 3, "placeholder": "Payroll notes"}),
         }
 
 

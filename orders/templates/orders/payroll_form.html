@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Payroll — TextileFlow{% endblock %}
+{% block content %}
+<h1 class="page-title">Payroll</h1>
+<div class="card form-card" style="max-width:900px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="field-grid">
+      <div class="field">
+        <label for="id_employee">Employee</label>
+        {{ form.employee }}
+      </div>
+      <div class="field">
+        <label for="id_pay_period_start">Pay Period Start</label>
+        {{ form.pay_period_start }}
+      </div>
+      <div class="field">
+        <label for="id_pay_period_end">Pay Period End</label>
+        {{ form.pay_period_end }}
+      </div>
+      <div class="field">
+        <label for="id_present_days">Present Days</label>
+        {{ form.present_days }}
+      </div>
+      <div class="field">
+        <label for="id_working_days">Working Days</label>
+        {{ form.working_days }}
+      </div>
+      <div class="field">
+        <label for="id_basic_salary">Basic Salary</label>
+        {{ form.basic_salary }}
+      </div>
+      <div class="field">
+        <label for="id_allowances">Allowances</label>
+        {{ form.allowances }}
+      </div>
+      <div class="field">
+        <label for="id_overtime">Overtime</label>
+        {{ form.overtime }}
+      </div>
+      <div class="field">
+        <label for="id_deductions">Deductions</label>
+        {{ form.deductions }}
+      </div>
+      <div class="field">
+        <label for="id_net_pay">Net Pay</label>
+        {{ form.net_pay }}
+      </div>
+      <div class="field">
+        <label for="id_payment_status">Payment Status</label>
+        {{ form.payment_status }}
+      </div>
+      <div class="field">
+        <label for="id_payment_date">Payment Date</label>
+        {{ form.payment_date }}
+      </div>
+      <div class="field" style="grid-column: span 2;">
+        <label for="id_notes">Notes</label>
+        {{ form.notes }}
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:12px;">
+      <a href="{% url 'payroll-list' %}" class="btn btn-outline">Cancel</a>
+      <button class="btn btn-primary" type="submit">Save Payroll</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Payroll — TextileFlow{% endblock %}
+{% block content %}
+<h1 class="page-title">Payroll</h1>
+<div style="margin-bottom:16px;">
+  <a href="{% url 'payroll-create' %}" class="btn btn-primary">+ Add Payroll</a>
+</div>
+
+<div class="card employee-section">
+  <div class="employee-table-wrap">
+    <table class="employee-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Period</th>
+          <th>Present</th>
+          <th>Basic</th>
+          <th>Net Pay</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for payroll in payrolls %}
+        <tr>
+          <td>{{ payroll.employee.name }}</td>
+          <td>{{ payroll.pay_period_start }} to {{ payroll.pay_period_end }}</td>
+          <td>{{ payroll.present_days }}/{{ payroll.working_days }}</td>
+          <td>₹{{ payroll.basic_salary|floatformat:2 }}</td>
+          <td>₹{{ payroll.net_pay|floatformat:2 }}</td>
+          <td>{{ payroll.get_payment_status_display }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align:center;">No payroll entries found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

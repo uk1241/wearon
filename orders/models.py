@@ -249,3 +249,120 @@ class Expense(models.Model):
     @property
     def total(self):
         return self.quantity * self.unit_cost
+
+
+class Employee(models.Model):
+    EMPLOYEE_STATUS_ACTIVE = "active"
+    EMPLOYEE_STATUS_INACTIVE = "inactive"
+    EMPLOYEE_STATUS_ON_LEAVE = "on_leave"
+
+    EMPLOYEE_STATUS_CHOICES = [
+        (EMPLOYEE_STATUS_ACTIVE, "Active"),
+        (EMPLOYEE_STATUS_INACTIVE, "Inactive"),
+        (EMPLOYEE_STATUS_ON_LEAVE, "On Leave"),
+    ]
+
+    name = models.CharField(max_length=150)
+    employee_id = models.CharField(max_length=50, unique=True, blank=True)
+    department = models.CharField(max_length=100, blank=True)
+    designation = models.CharField(max_length=100, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    email = models.EmailField(blank=True)
+    address = models.TextField(blank=True)
+    joining_date = models.DateField(default=timezone.localdate)
+    monthly_salary = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    status = models.CharField(max_length=20, choices=EMPLOYEE_STATUS_CHOICES, default=EMPLOYEE_STATUS_ACTIVE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.employee_id or 'New'})"
+
+    def save(self, *args, **kwargs):
+        if not self.employee_id:
+            last_employee = Employee.objects.order_by("id").last()
+            next_id = (last_employee.id + 1) if last_employee else 1
+            self.employee_id = f"EMP-{next_id:04d}"
+        super().save(*args, **kwargs)
+
+
+class EmployeeAttendance(models.Model):
+    ATTENDANCE_PRESENT = "present"
+    ATTENDANCE_ABSENT = "absent"
+    ATTENDANCE_HALF_DAY = "half_day"
+    ATTENDANCE_LEAVE = "leave"
+
+    ATTENDANCE_STATUS_CHOICES = [
+        (ATTENDANCE_PRESENT, "Present"),
+        (ATTENDANCE_ABSENT, "Absent"),
+        (ATTENDANCE_HALF_DAY, "Half Day"),
+        (ATTENDANCE_LEAVE, "Leave"),
+    ]
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="attendance_records")
+    date = models.DateField(default=timezone.localdate)
+    check_in = models.TimeField(null=True, blank=True)
+    check_out = models.TimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=ATTENDANCE_STATUS_CHOICES, default=ATTENDANCE_PRESENT)
+    work_hours = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"))
+    remarks = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date", "employee__name"]
+        unique_together = ("employee", "date")
+
+    def __str__(self):
+        return f"{self.employee.name} - {self.date}"
+
+    def save(self, *args, **kwargs):
+        if self.check_in and self.check_out:
+            try:
+                check_in_dt = timezone.datetime.combine(self.date, self.check_in)
+                check_out_dt = timezone.datetime.combine(self.date, self.check_out)
+                elapsed = check_out_dt - check_in_dt
+                if elapsed.total_seconds() >= 0:
+                    total_hours = elapsed.total_seconds() / 3600
+                    self.work_hours = Decimal(str(total_hours)).quantize(Decimal("0.01"))
+            except Exception:
+                self.work_hours = Decimal("0.00")
+        elif self.check_in and not self.check_out:
+            self.work_hours = Decimal("0.00")
+        super().save(*args, **kwargs)
+
+
+class Payroll(models.Model):
+    PAYMENT_STATUS_PENDING = "pending"
+    PAYMENT_STATUS_PAID = "paid"
+    PAYMENT_STATUS_PARTIAL = "partial"
+
+    PAYMENT_STATUS_CHOICES = [
+        (PAYMENT_STATUS_PENDING, "Pending"),
+        (PAYMENT_STATUS_PAID, "Paid"),
+        (PAYMENT_STATUS_PARTIAL, "Partial"),
+    ]
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="payrolls")
+    pay_period_start = models.DateField()
+    pay_period_end = models.DateField()
+    present_days = models.IntegerField(default=0)
+    working_days = models.IntegerField(default=0)
+    basic_salary = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    allowances = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    overtime = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    deductions = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    net_pay = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default=PAYMENT_STATUS_PENDING)
+    payment_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-pay_period_end", "employee__name"]
+
+    def __str__(self):
+        return f"{self.employee.name} - {self.pay_period_start} to {self.pay_period_end}"

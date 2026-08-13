@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Employee Attendance — TextileFlow{% endblock %}
+{% block content %}
+<h1 class="page-title">{% if editing %}Edit Attendance{% else %}Employee Attendance{% endif %}</h1>
+<p class="page-sub">Record the first check-in, then update the check-out when the shift ends.</p>
+<div class="card form-card" style="max-width:760px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="field-grid">
+      <div class="field">
+        <label for="id_employee">Employee</label>
+        {{ form.employee }}
+      </div>
+      <div class="field">
+        <label for="id_date">Date</label>
+        {{ form.date }}
+      </div>
+      <div class="field">
+        <label for="id_check_in">Check In</label>
+        {{ form.check_in }}
+      </div>
+      <div class="field">
+        <label for="id_check_out">Check Out</label>
+        {{ form.check_out }}
+      </div>
+      <div class="field">
+        <label for="id_status">Status</label>
+        {{ form.status }}
+      </div>
+      <div class="field">
+        <label for="id_work_hours">Work Hours</label>
+        {{ form.work_hours }}
+      </div>
+      <div class="field" style="grid-column: span 2;">
+        <label for="id_remarks">Remarks</label>
+        {{ form.remarks }}
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:12px;">
+      {% if editing and attendance %}
+      <a href="{% url 'employee-detail' attendance.employee.pk %}" class="btn btn-outline">Back to Employee</a>
+      {% else %}
+      <a href="{% url 'employee-attendance-list' %}" class="btn btn-outline">Cancel</a>
+      {% endif %}
+      <button class="btn btn-primary" type="submit">{% if editing %}Update Attendance{% else %}Save Attendance{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Employee Attendance — TextileFlow{% endblock %}
+{% block content %}
+<h1 class="page-title">Employee Attendance</h1>
+<div style="margin-bottom:16px;">
+  <a href="{% url 'employee-attendance-create' %}" class="btn btn-primary">+ Add Attendance</a>
+</div>
+
+<div class="card employee-section">
+  <div class="employee-table-wrap">
+    <table class="employee-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Check In</th>
+          <th>Check Out</th>
+          <th>Hours</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for attendance in attendances %}
+        <tr>
+          <td>{{ attendance.employee.name }}</td>
+          <td>{{ attendance.date }}</td>
+          <td>{{ attendance.get_status_display }}</td>
+          <td>{{ attendance.check_in|default:'—' }}</td>
+          <td>{{ attendance.check_out|default:'—' }}</td>
+          <td>{{ attendance.work_hours }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align:center;">No attendance records found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

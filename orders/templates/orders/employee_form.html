@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Add Employee — TextileFlow{% endblock %}
+{% block content %}
+<h1 class="page-title">Add Employee</h1>
+<div class="card form-card" style="max-width:900px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="field-grid">
+      <div class="field">
+        <label for="id_name">Employee Name</label>
+        {{ form.name }}
+      </div>
+      <div class="field">
+        <label for="id_department">Department</label>
+        {{ form.department }}
+      </div>
+      <div class="field">
+        <label for="id_designation">Designation</label>
+        {{ form.designation }}
+      </div>
+      <div class="field">
+        <label for="id_phone">Mobile</label>
+        {{ form.phone }}
+      </div>
+      <div class="field">
+        <label for="id_email">Email</label>
+        {{ form.email }}
+      </div>
+      <div class="field">
+        <label for="id_joining_date">Joining Date</label>
+        {{ form.joining_date }}
+      </div>
+      <div class="field">
+        <label for="id_monthly_salary">Monthly Salary (₹)</label>
+        {{ form.monthly_salary }}
+      </div>
+      <div class="field">
+        <label for="id_status">Status</label>
+        {{ form.status }}
+      </div>
+      <div class="field" style="grid-column: span 2;">
+        <label for="id_address">Address</label>
+        {{ form.address }}
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:12px;">
+      <input type="hidden" name="next" value="{{ next }}">
+      <a href="{% if next %}{{ next }}{% else %}{% url 'employee-list' %}{% endif %}" class="btn btn-outline">Cancel</a>
+      <button class="btn btn-primary" type="submit">Save Employee</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
