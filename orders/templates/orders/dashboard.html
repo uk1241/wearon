@@ -3,31 +3,142 @@
 {% block title %}Dashboard — TextileFlow{% endblock %}
 {% block content %}
 <h1 class="page-title">Overview</h1>
-<p class="page-sub">Track workshop performance and active orders.</p>
+<p class="page-sub">Track workshop performance across sales, payments, employees, and expenses.</p>
 
 <div class="stat-grid">
   <div class="card stat-card"><div class="stat-label">Total Orders</div><div class="stat-value">{{ total_orders }}</div></div>
   <div class="card stat-card"><div class="stat-label">In Progress</div><div class="stat-value">{{ in_progress_count }}</div></div>
   <div class="card stat-card"><div class="stat-label">Completed</div><div class="stat-value green">{{ finished_count }}</div></div>
-  <div class="card stat-card"><div class="stat-label">Revenue</div><div class="stat-value">&#8377;{{ revenue_today|intcomma }}</div></div>
-  <div class="card stat-card"><div class="stat-label">Expenses</div><div class="stat-value red">&#8377;{{ expenses_today|intcomma }}</div></div>
+  <div class="card stat-card"><div class="stat-label">Revenue Today</div><div class="stat-value">&#8377;{{ revenue_today|intcomma }}</div></div>
+  <div class="card stat-card"><div class="stat-label">Expenses Today</div><div class="stat-value red">&#8377;{{ expenses_today|intcomma }}</div></div>
   <div class="card stat-card"><div class="stat-label">Net Profit</div><div class="stat-value">&#8377;{{ net_profit|intcomma }}</div></div>
 </div>
 
-<div class="filter-bar">
-  <div class="tabs">
-    {% for code, label in status_tabs %}
-      <a class="tab {% if active_status == code %}active{% endif %}" href="?status={{ code }}">{{ label }}</a>
+<div class="chart-grid">
+
+  <div class="card chart-card span-2">
+    <h3>Revenue vs Expenses</h3>
+    <p class="chart-sub">Last 6 months</p>
+    <div class="trend-legend">
+      <span class="legend-row"><span class="legend-dot" style="background: var(--primary-strong);"></span> Revenue</span>
+      <span class="legend-row"><span class="legend-dot" style="background: var(--danger);"></span> Expenses</span>
+    </div>
+    {% if trend_data %}
+    <div class="chart-columns">
+      {% for item in trend_data %}
+      <div class="chart-col">
+        <div class="chart-col-bars">
+          <div class="chart-bar revenue-bar" style="height: {{ item.revenue_pct }}%;" title="Revenue — &#8377;{{ item.revenue|intcomma }}"></div>
+          <div class="chart-bar expenses-bar" style="height: {{ item.expenses_pct }}%;" title="Expenses — &#8377;{{ item.expenses|intcomma }}"></div>
+        </div>
+        <div class="chart-col-label">{{ item.label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">No sales data yet.</div>
+    {% endif %}
+  </div>
+
+  <div class="card chart-card">
+    <h3>Order Status</h3>
+    <p class="chart-sub">{{ total_orders }} total orders</p>
+    <div class="donut-layout">
+      <div class="donut-wrap">
+        <div class="donut" style="background: conic-gradient({{ order_status_gradient|safe }});"></div>
+        <div class="donut-hole">
+          <div class="donut-total">{{ total_orders }}</div>
+          <div class="donut-caption">Orders</div>
+        </div>
+      </div>
+      <ul class="chart-legend">
+        {% for row in order_status_legend %}
+        <li class="legend-row">
+          <span class="legend-dot" style="background: {{ row.color|safe }};"></span>
+          <span class="legend-label">{{ row.label }}</span>
+          <span class="legend-value">{{ row.value|floatformat:0 }}</span>
+          <span class="legend-pct">{{ row.pct }}%</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <h3>Payment Status</h3>
+    <p class="chart-sub">Across all orders</p>
+    <div class="donut-layout">
+      <div class="donut-wrap">
+        <div class="donut" style="background: conic-gradient({{ payment_status_gradient|safe }});"></div>
+        <div class="donut-hole">
+          <div class="donut-total">{{ total_orders }}</div>
+          <div class="donut-caption">Orders</div>
+        </div>
+      </div>
+      <ul class="chart-legend">
+        {% for row in payment_status_legend %}
+        <li class="legend-row">
+          <span class="legend-dot" style="background: {{ row.color|safe }};"></span>
+          <span class="legend-label">{{ row.label }}</span>
+          <span class="legend-value">{{ row.value|floatformat:0 }}</span>
+          <span class="legend-pct">{{ row.pct }}%</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <h3>Employee Attendance</h3>
+    <p class="chart-sub">Today — {{ active_employee_count }} active employees</p>
+    <div class="donut-layout">
+      <div class="donut-wrap">
+        <div class="donut" style="background: conic-gradient({{ attendance_gradient|safe }});"></div>
+        <div class="donut-hole">
+          <div class="donut-total">{{ today_present_count }}</div>
+          <div class="donut-caption">Present</div>
+        </div>
+      </div>
+      <ul class="chart-legend">
+        {% for row in attendance_legend %}
+        <li class="legend-row">
+          <span class="legend-dot" style="background: {{ row.color|safe }};"></span>
+          <span class="legend-label">{{ row.label }}</span>
+          <span class="legend-value">{{ row.value|floatformat:0 }}</span>
+          <span class="legend-pct">{{ row.pct }}%</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <h3>Top Customers by Revenue</h3>
+    <p class="chart-sub">Best performing accounts</p>
+    {% for row in top_customers %}
+    <div class="bar-row">
+      <span class="bar-label">{{ row.name }}</span>
+      <span class="bar-track"><span class="bar-fill" style="width: {{ row.pct }}%;" title="&#8377;{{ row.revenue|intcomma }}"></span></span>
+      <span class="bar-value">&#8377;{{ row.revenue|intcomma }}</span>
+    </div>
+    {% empty %}
+    <div class="empty-state">No revenue recorded yet.</div>
     {% endfor %}
   </div>
-  <a href="{% url 'order-list' %}" class="btn btn-outline btn-sm">View All Orders</a>
-</div>
 
-<div class="order-grid">
-  {% for order in orders %}
-    {% include "orders/_order_card.html" %}
-  {% empty %}
-    <div class="empty-state">No orders yet.</div>
-  {% endfor %}
+  <div class="card chart-card">
+    <h3>Expenses by Category</h3>
+    <p class="chart-sub">Where the workshop is spending</p>
+    {% for row in expense_categories %}
+    <div class="bar-row">
+      <span class="bar-label">{{ row.label }}</span>
+      <span class="bar-track"><span class="bar-fill danger-fill" style="width: {{ row.pct }}%;" title="&#8377;{{ row.total|intcomma }}"></span></span>
+      <span class="bar-value">&#8377;{{ row.total|intcomma }}</span>
+    </div>
+    {% empty %}
+    <div class="empty-state">No expenses recorded yet.</div>
+    {% endfor %}
+  </div>
+
 </div>
 {% endblock %}

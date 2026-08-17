@@ -1,7 +1,17 @@
 from django import forms
 from django.forms import inlineformset_factory
 
-from .models import Customer, Employee, EmployeeAttendance, Expense, Order, OrderItem, Payment, Payroll
+from .models import (
+    AttendanceSegment,
+    Customer,
+    Employee,
+    EmployeeAttendance,
+    Expense,
+    Order,
+    OrderItem,
+    Payment,
+    Payroll,
+)
 from .models import Fabric
 from django import forms as _forms
 
@@ -201,6 +211,24 @@ class EmployeeAttendanceForm(forms.ModelForm):
             "work_hours": forms.NumberInput(attrs={"step": "0.25", "min": "0"}),
             "remarks": forms.TextInput(attrs={"placeholder": "Remarks"}),
         }
+
+
+class AttendanceSegmentForm(forms.ModelForm):
+    class Meta:
+        model = AttendanceSegment
+        fields = ["check_in", "check_out", "note"]
+        widgets = {
+            "check_in": forms.TimeInput(attrs={"type": "time", "class": "segment-check-in"}),
+            "check_out": forms.TimeInput(attrs={"type": "time", "class": "segment-check-out"}),
+            "note": forms.TextInput(
+                attrs={"placeholder": "e.g. Post-lunch, Overtime", "class": "segment-note"}
+            ),
+        }
+
+
+AttendanceSegmentFormSet = inlineformset_factory(
+    EmployeeAttendance, AttendanceSegment, form=AttendanceSegmentForm, extra=1, can_delete=True
+)
 
 
 class PayrollForm(forms.ModelForm):

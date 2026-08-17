@@ -333,6 +333,41 @@ class EmployeeAttendance(models.Model):
             self.work_hours = Decimal("0.00")
         super().save(*args, **kwargs)
 
+    def compute_total_hours(self):
+        """Primary check-in/out hours plus every additional segment (lunch breaks, overtime, etc.)."""
+        total = Decimal("0.00")
+        if self.check_in and self.check_out:
+            start = timezone.datetime.combine(self.date, self.check_in)
+            end = timezone.datetime.combine(self.date, self.check_out)
+            elapsed = (end - start).total_seconds()
+            if elapsed > 0:
+                total += Decimal(str(elapsed / 3600))
+        for segment in self.segments.all():
+            total += segment.hours
+        return total.quantize(Decimal("0.01"))
+
+
+class AttendanceSegment(models.Model):
+    attendance = models.ForeignKey(EmployeeAttendance, on_delete=models.CASCADE, related_name="segments")
+    check_in = models.TimeField()
+    check_out = models.TimeField(null=True, blank=True)
+    note = models.CharField(max_length=100, blank=True, help_text="e.g. Post-lunch, Overtime")
+
+    class Meta:
+        ordering = ["check_in"]
+
+    def __str__(self):
+        return f"{self.attendance} — {self.check_in}-{self.check_out or '...'}"
+
+    @property
+    def hours(self):
+        if not (self.check_in and self.check_out):
+            return Decimal("0.00")
+        start = timezone.datetime.combine(self.attendance.date, self.check_in)
+        end = timezone.datetime.combine(self.attendance.date, self.check_out)
+        elapsed = abs((end - start).total_seconds())
+        return Decimal(str(elapsed / 3600)).quantize(Decimal("0.01"))
+
 
 class Payroll(models.Model):
     PAYMENT_STATUS_PENDING = "pending"

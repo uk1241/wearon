@@ -1,10 +1,11 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Employee Attendance — TextileFlow{% endblock %}
 {% block content %}
 <h1 class="page-title">{% if editing %}Edit Attendance{% else %}Employee Attendance{% endif %}</h1>
 <p class="page-sub">Record the first check-in, then update the check-out when the shift ends.</p>
 <div class="card form-card" style="max-width:760px;">
-  <form method="post">
+  <form method="post" id="attendance-form">
     {% csrf_token %}
     <div class="field-grid">
       <div class="field">
@@ -36,6 +37,51 @@
         {{ form.remarks }}
       </div>
     </div>
+
+    {% if editing and segment_formset %}
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+      <h3 style="border:none; margin:0; padding:0; font-size:14px;">Additional Check-in / Check-out</h3>
+      <button type="button" class="btn btn-sm" id="add-segment-row">+ Add Entry</button>
+    </div>
+    <p class="chart-sub" style="margin:4px 0 10px;">Use this for lunch breaks, overtime, or any extra time outside the main shift above.</p>
+    {{ segment_formset.management_form }}
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Check Out</th>
+          <th>Check In</th>
+          <th>Note</th>
+          <th style="width:70px;">Hours</th>
+          <th style="width:30px;"></th>
+        </tr>
+      </thead>
+      <tbody id="segments-body">
+        {% for seg_form in segment_formset %}
+        <tr class="segment-row">
+          <td>{{ seg_form.check_out }}</td>
+          <td>{{ seg_form.check_in }}</td>
+          <td>{{ seg_form.note }}</td>
+          <td class="amount-cell"><span class="row-hours">{{ seg_form.instance.hours|default:"0.00" }}</span></td>
+          <td>
+            {% if seg_form.instance.pk %}{{ seg_form.DELETE }}{% endif %}
+            {{ seg_form.id }}
+            <button type="button" class="row-remove" onclick="removeFormRow(this)">&times;</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <template id="empty-segment-row">
+      <tr class="segment-row">
+        <td>{{ segment_formset.empty_form.check_out }}</td>
+        <td>{{ segment_formset.empty_form.check_in }}</td>
+        <td>{{ segment_formset.empty_form.note }}</td>
+        <td class="amount-cell"><span class="row-hours">0.00</span></td>
+        <td><button type="button" class="row-remove" onclick="removeFormRow(this)">&times;</button></td>
+      </tr>
+    </template>
+    {% endif %}
+
     <div class="form-actions" style="margin-top:12px;">
       {% if editing and attendance %}
       <a href="{% url 'employee-detail' attendance.employee.pk %}" class="btn btn-outline">Back to Employee</a>
@@ -46,4 +92,7 @@
     </div>
   </form>
 </div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{% static 'js/attendance_form.js' %}"></script>
 {% endblock %}

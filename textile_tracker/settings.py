@@ -28,6 +28,7 @@ DEBUG = True
 import os
 
 ALLOWED_HOSTS = [
+    "50.6.44.80",
     "wearon-os.onrender.com",
     "wearon.co.in",
     "www.wearon.co.in",

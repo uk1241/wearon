@@ -9,6 +9,7 @@
     </div>
 
     <div class="employee-detail-actions">
+      <a href="{% url 'employee-edit' employee.pk %}" class="btn btn-outline">Edit Details</a>
       <a href="{% url 'employee-attendance-create' %}?employee={{ employee.pk }}" class="btn btn-primary">+ Mark Attendance</a>
       <a href="{% url 'payroll-create' %}?employee={{ employee.pk }}" class="btn btn-outline">+ Add Payroll</a>
       <a href="{% url 'employee-list' %}" class="btn btn-outline">Back to Employees</a>
@@ -88,6 +89,7 @@
             <th>Basic</th>
             <th>Net Pay</th>
             <th>Status</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -98,9 +100,10 @@
             <td>₹{{ payroll.basic_salary|floatformat:2 }}</td>
             <td>₹{{ payroll.net_pay|floatformat:2 }}</td>
             <td>{{ payroll.get_payment_status_display }}</td>
+            <td><a href="{% url 'payroll-edit' payroll.pk %}" class="btn btn-sm btn-outline">Edit</a></td>
           </tr>
           {% empty %}
-          <tr><td colspan="5" class="empty-row">No payroll entries found.</td></tr>
+          <tr><td colspan="6" class="empty-row">No payroll entries found.</td></tr>
           {% endfor %}
         </tbody>
       </table>

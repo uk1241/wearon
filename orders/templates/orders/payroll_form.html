@@ -1,9 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Payroll — TextileFlow{% endblock %}
+{% load static %}
+{% block title %}{% if editing %}Edit Payroll{% else %}Payroll{% endif %} — TextileFlow{% endblock %}
 {% block content %}
-<h1 class="page-title">Payroll</h1>
+<h1 class="page-title">{% if editing %}Edit Payroll{% else %}Payroll{% endif %}</h1>
 <div class="card form-card" style="max-width:900px;">
-  <form method="post">
+  <form method="post" id="payroll-form">
     {% csrf_token %}
     <div class="field-grid">
       <div class="field">
@@ -59,10 +60,44 @@
         {{ form.notes }}
       </div>
     </div>
+
+    <div class="card employee-section" id="attendance-summary-card" style="display:none; margin-top:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="margin:0;">Attendance for Selected Period</h3>
+        <button type="button" class="btn btn-sm" id="use-attendance-days">Use These Days</button>
+      </div>
+      <div class="kv-row" style="margin-top:10px;"><span class="k">Present Days</span><span class="v" id="summary-present-days">0</span></div>
+      <div class="kv-row"><span class="k">Days in Period</span><span class="v" id="summary-working-days">0</span></div>
+      <div class="kv-row"><span class="k">Total Hours Worked</span><span class="v" id="summary-total-hours">0.00</span></div>
+      <div class="employee-table-wrap" style="margin-top:12px;">
+        <table class="employee-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Check In</th>
+              <th>Check Out</th>
+              <th>Hours</th>
+            </tr>
+          </thead>
+          <tbody id="attendance-summary-body">
+            <tr><td colspan="5" class="empty-row">Select an employee and both dates to load attendance.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="form-actions" style="margin-top:12px;">
+      {% if editing and payroll %}
+      <a href="{% url 'employee-detail' payroll.employee.pk %}" class="btn btn-outline">Cancel</a>
+      {% else %}
       <a href="{% url 'payroll-list' %}" class="btn btn-outline">Cancel</a>
-      <button class="btn btn-primary" type="submit">Save Payroll</button>
+      {% endif %}
+      <button class="btn btn-primary" type="submit">{% if editing %}Update Payroll{% else %}Save Payroll{% endif %}</button>
     </div>
   </form>
 </div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{% static 'js/payroll_form.js' %}"></script>
 {% endblock %}

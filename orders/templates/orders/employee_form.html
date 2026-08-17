@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Add Employee — TextileFlow{% endblock %}
+{% block title %}{% if is_new %}Add Employee{% else %}Edit Employee{% endif %} — TextileFlow{% endblock %}
 {% block content %}
-<h1 class="page-title">Add Employee</h1>
+<h1 class="page-title">{% if is_new %}Add Employee{% else %}Edit Employee{% endif %}</h1>
 <div class="card form-card" style="max-width:900px;">
   <form method="post">
     {% csrf_token %}
@@ -45,8 +45,8 @@
     </div>
     <div class="form-actions" style="margin-top:12px;">
       <input type="hidden" name="next" value="{{ next }}">
-      <a href="{% if next %}{{ next }}{% else %}{% url 'employee-list' %}{% endif %}" class="btn btn-outline">Cancel</a>
-      <button class="btn btn-primary" type="submit">Save Employee</button>
+      <a href="{% if next %}{{ next }}{% elif employee %}{% url 'employee-detail' employee.pk %}{% else %}{% url 'employee-list' %}{% endif %}" class="btn btn-outline">Cancel</a>
+      <button class="btn btn-primary" type="submit">{% if is_new %}Save Employee{% else %}Update Employee{% endif %}</button>
     </div>
   </form>
 </div>
