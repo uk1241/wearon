@@ -368,6 +368,17 @@ class AttendanceSegment(models.Model):
         elapsed = abs((end - start).total_seconds())
         return Decimal(str(elapsed / 3600)).quantize(Decimal("0.01"))
 
+    @property
+    def duration_display(self):
+        """Human-readable Hh Mm duration — avoids decimal hours reading like minutes (0.45 != 45 min)."""
+        if not (self.check_in and self.check_out):
+            return "0h 0m"
+        start = timezone.datetime.combine(self.attendance.date, self.check_in)
+        end = timezone.datetime.combine(self.attendance.date, self.check_out)
+        total_minutes = int(round(abs((end - start).total_seconds()) / 60))
+        hours, minutes = divmod(total_minutes, 60)
+        return f"{hours}h {minutes}m"
+
 
 class Payroll(models.Model):
     PAYMENT_STATUS_PENDING = "pending"

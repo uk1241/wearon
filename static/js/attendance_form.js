@@ -17,11 +17,13 @@
     var a = timeToMinutes(checkOutInput.value);
     var b = timeToMinutes(checkInInput.value);
     if (a === null || b === null) {
-      hoursEl.textContent = "0.00";
+      hoursEl.textContent = "0h 0m";
       return;
     }
     var diffMinutes = Math.abs(b - a);
-    hoursEl.textContent = (diffMinutes / 60).toFixed(2);
+    var hours = Math.floor(diffMinutes / 60);
+    var minutes = diffMinutes % 60;
+    hoursEl.textContent = hours + "h " + minutes + "m";
   }
 
   function recalcAllRows() {

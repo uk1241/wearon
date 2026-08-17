@@ -51,7 +51,7 @@
           <th>Check Out</th>
           <th>Check In</th>
           <th>Note</th>
-          <th style="width:70px;">Hours</th>
+          <th style="width:80px;">Hours</th>
           <th style="width:30px;"></th>
         </tr>
       </thead>
@@ -61,7 +61,7 @@
           <td>{{ seg_form.check_out }}</td>
           <td>{{ seg_form.check_in }}</td>
           <td>{{ seg_form.note }}</td>
-          <td class="amount-cell"><span class="row-hours">{{ seg_form.instance.hours|default:"0.00" }}</span></td>
+          <td class="amount-cell"><span class="row-hours">{{ seg_form.instance.duration_display|default:"0h 0m" }}</span></td>
           <td>
             {% if seg_form.instance.pk %}{{ seg_form.DELETE }}{% endif %}
             {{ seg_form.id }}
@@ -76,7 +76,7 @@
         <td>{{ segment_formset.empty_form.check_out }}</td>
         <td>{{ segment_formset.empty_form.check_in }}</td>
         <td>{{ segment_formset.empty_form.note }}</td>
-        <td class="amount-cell"><span class="row-hours">0.00</span></td>
+        <td class="amount-cell"><span class="row-hours">0h 0m</span></td>
         <td><button type="button" class="row-remove" onclick="removeFormRow(this)">&times;</button></td>
       </tr>
     </template>
