@@ -3,6 +3,7 @@ from django.forms import inlineformset_factory
 
 from .models import (
     AttendanceSegment,
+    CompanyExpense,
     Customer,
     Employee,
     EmployeeAttendance,
@@ -168,6 +169,19 @@ class ExpenseForm(forms.ModelForm):
             ),
             "quantity": forms.NumberInput(attrs={"step": "0.01", "min": "0", "class": "exp-qty"}),
             "unit_cost": forms.NumberInput(attrs={"step": "0.01", "min": "0", "class": "exp-cost"}),
+        }
+
+
+class CompanyExpenseForm(forms.ModelForm):
+    class Meta:
+        model = CompanyExpense
+        fields = ["name", "category", "amount", "expense_date", "notes"]
+        widgets = {
+            "name": forms.TextInput(attrs={"placeholder": "e.g. Shop Rent - August"}),
+            "category": forms.Select(),
+            "amount": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
+            "expense_date": forms.DateInput(attrs={"type": "date"}),
+            "notes": forms.TextInput(attrs={"placeholder": "Notes (optional)"}),
         }
 
 

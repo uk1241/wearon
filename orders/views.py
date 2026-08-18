@@ -1,3 +1,4 @@
+import calendar
 import csv
 from collections import defaultdict
 from datetime import date, datetime
@@ -14,6 +15,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import (
     AttendanceSegmentFormSet,
+    CompanyExpenseForm,
     ExpenseFormSet,
     EmployeeAttendanceForm,
     EmployeeForm,
@@ -24,6 +26,7 @@ from .forms import (
 )
 from .forms import FabricForm, CustomerForm
 from .models import (
+    CompanyExpense,
     Customer,
     Employee,
     EmployeeAttendance,
@@ -58,6 +61,20 @@ def _months_back(first_of_month, months):
     year = first_of_month.year + month_index // 12
     month = month_index % 12 + 1
     return first_of_month.replace(year=year, month=month, day=1)
+
+
+def _quarter_bounds(target_date):
+    """First and last date of the calendar quarter containing target_date."""
+    quarter_index = (target_date.month - 1) // 3
+    start_month = quarter_index * 3 + 1
+    end_month = start_month + 2
+    start = date(target_date.year, start_month, 1)
+    end = date(target_date.year, end_month, calendar.monthrange(target_date.year, end_month)[1])
+    return start, end
+
+
+def _quarter_number(target_date):
+    return (target_date.month - 1) // 3 + 1
 
 
 def _donut_chart(segments):
@@ -112,6 +129,16 @@ def dashboard(request):
     expenses_today = sum(
         (e.total for e in Expense.objects.filter(created_at__date=today)), Decimal("0")
     ).quantize(Decimal("0.01"))
+    company_expenses_today = sum(
+        (e.amount for e in CompanyExpense.objects.filter(expense_date=today)), Decimal("0")
+    )
+    expenses_today = (expenses_today + company_expenses_today).quantize(Decimal("0.01"))
+
+    company_expenses_total = (
+        CompanyExpense.objects.aggregate(total=Sum("amount"))["total"] or Decimal("0")
+    ).quantize(Decimal("0.01"))
+    total_expenses = (total_expenses + company_expenses_total).quantize(Decimal("0.01"))
+
     payroll_this_month = sum(
         (p.net_pay for p in Payroll.objects.filter(pay_period_start__month=today.month, pay_period_start__year=today.year)),
         Decimal("0"),
@@ -216,6 +243,29 @@ def dashboard(request):
     for row in expense_categories:
         row["pct"] = int(row["total"] / max_category_total * 100)
 
+    # Company expenses for the current quarter (resets each quarter; history stays in Reports).
+    quarter_start, quarter_end = _quarter_bounds(today)
+    company_category_choices = dict(CompanyExpense.CATEGORY_CHOICES)
+    company_quarter_totals = (
+        CompanyExpense.objects.filter(expense_date__gte=quarter_start, expense_date__lte=quarter_end)
+        .values("category")
+        .annotate(total=Sum("amount"))
+        .order_by("-total")
+    )
+    company_expense_categories = [
+        {
+            "label": company_category_choices.get(row["category"], row["category"]),
+            "total": row["total"] or Decimal("0"),
+        }
+        for row in company_quarter_totals
+    ]
+    max_company_category_total = max(
+        (row["total"] for row in company_expense_categories), default=Decimal("0")
+    ) or Decimal("1")
+    for row in company_expense_categories:
+        row["pct"] = int(row["total"] / max_company_category_total * 100)
+    company_quarter_total = sum((row["total"] for row in company_expense_categories), Decimal("0"))
+
     context = {
         "total_orders": orders.count(),
         "in_progress_count": status_counts.get(Order.STATUS_IN_PROGRESS, 0) + status_counts.get(Order.STATUS_PENDING, 0),
@@ -238,6 +288,10 @@ def dashboard(request):
         "attendance_marked_count": marked_count,
         "top_customers": top_customers_data,
         "expense_categories": expense_categories,
+        "company_expense_categories": company_expense_categories,
+        "company_quarter_total": company_quarter_total,
+        "company_expenses_total": company_expenses_total,
+        "current_quarter_label": f"Q{_quarter_number(today)} {today.year}",
     }
     return render(request, "orders/dashboard.html", context)
 
@@ -678,19 +732,85 @@ def expense_export(request, pk):
 
 @login_required
 def expense_list(request):
-    orders = (
-        Order.objects.select_related("customer")
-        .prefetch_related("expenses")
-        .order_by("-created_at")
-    )
-    return render(request, "orders/expense_list.html", {"orders": orders})
+    expense_type = request.GET.get("type", "default")
+    if expense_type not in {"default", "company"}:
+        expense_type = "default"
+
+    context = {"expense_type": expense_type}
+
+    if expense_type == "company":
+        today = date.today()
+        quarter_start, quarter_end = _quarter_bounds(today)
+        company_category_choices = dict(CompanyExpense.CATEGORY_CHOICES)
+
+        company_expenses = CompanyExpense.objects.all()
+        this_quarter_expenses = company_expenses.filter(
+            expense_date__gte=quarter_start, expense_date__lte=quarter_end
+        )
+        this_quarter_total = this_quarter_expenses.aggregate(total=Sum("amount"))["total"] or Decimal("0")
+        all_time_total = company_expenses.aggregate(total=Sum("amount"))["total"] or Decimal("0")
+
+        category_totals = (
+            this_quarter_expenses.values("category").annotate(total=Sum("amount")).order_by("-total")
+        )
+        category_rows = [
+            {
+                "label": company_category_choices.get(row["category"], row["category"]),
+                "total": row["total"] or Decimal("0"),
+            }
+            for row in category_totals
+        ]
+        max_category_total = max((row["total"] for row in category_rows), default=Decimal("0")) or Decimal("1")
+        for row in category_rows:
+            row["pct"] = int(row["total"] / max_category_total * 100)
+
+        context.update(
+            {
+                "company_expenses": company_expenses,
+                "quarter_label": f"Q{_quarter_number(today)} {today.year}",
+                "this_quarter_total": this_quarter_total,
+                "all_time_company_total": all_time_total,
+                "company_category_rows": category_rows,
+            }
+        )
+    else:
+        orders = (
+            Order.objects.select_related("customer")
+            .prefetch_related("expenses")
+            .order_by("-created_at")
+        )
+        context["orders"] = orders
+
+    return render(request, "orders/expense_list.html", context)
+
+
+@login_required
+def company_expense_create(request):
+    if request.method == "POST":
+        form = CompanyExpenseForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect(reverse("expense-list") + "?type=company")
+    else:
+        form = CompanyExpenseForm()
+    return render(request, "orders/company_expense_form.html", {"form": form})
+
+
+@login_required
+@require_POST
+def company_expense_delete(request, pk):
+    expense = get_object_or_404(CompanyExpense, pk=pk)
+    expense.delete()
+    return redirect(reverse("expense-list") + "?type=company")
 
 
 @login_required
 def reports(request):
     orders = list(Order.objects.prefetch_related("items", "expenses"))
     total_revenue = sum((o.grand_total for o in orders), Decimal("0"))
-    total_expenses = sum((o.total_expenses for o in orders), Decimal("0"))
+    order_expenses_total = sum((o.total_expenses for o in orders), Decimal("0"))
+    company_expenses_total = CompanyExpense.objects.aggregate(total=Sum("amount"))["total"] or Decimal("0")
+    total_expenses = order_expenses_total + company_expenses_total
     net_profit = total_revenue - total_expenses
     order_count = len(orders)
     avg_order_value = (total_revenue / order_count) if order_count else Decimal("0")
@@ -713,14 +833,32 @@ def reports(request):
     for row in top_customers:
         row["pct"] = (row["revenue"] / max_revenue * 100) if max_revenue else 0
 
+    # Company expenses grouped by quarter — the "overall" history behind the resetting per-quarter figure.
+    quarterly_company = defaultdict(Decimal)
+    for expense in CompanyExpense.objects.all():
+        key = (expense.expense_date.year, _quarter_number(expense.expense_date))
+        quarterly_company[key] += expense.amount
+    quarterly_company_rows = [
+        {"label": f"Q{quarter} {year}", "total": total}
+        for (year, quarter), total in sorted(quarterly_company.items(), key=lambda kv: kv[0], reverse=True)
+    ]
+    max_quarterly_total = max(
+        (row["total"] for row in quarterly_company_rows), default=Decimal("0")
+    ) or Decimal("1")
+    for row in quarterly_company_rows:
+        row["pct"] = (row["total"] / max_quarterly_total * 100) if max_quarterly_total else 0
+
     context = {
         "total_revenue": total_revenue,
         "total_expenses": total_expenses,
+        "order_expenses_total": order_expenses_total,
+        "company_expenses_total": company_expenses_total,
         "net_profit": net_profit,
         "order_count": order_count,
         "avg_order_value": avg_order_value,
         "status_breakdown": status_breakdown,
         "top_customers": top_customers,
+        "quarterly_company_rows": quarterly_company_rows,
     }
     return render(request, "orders/reports.html", context)
 

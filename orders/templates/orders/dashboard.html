@@ -127,8 +127,8 @@
   </div>
 
   <div class="card chart-card">
-    <h3>Expenses by Category</h3>
-    <p class="chart-sub">Where the workshop is spending</p>
+    <h3>Order Expenses by Category</h3>
+    <p class="chart-sub">Where order-linked spending goes</p>
     {% for row in expense_categories %}
     <div class="bar-row">
       <span class="bar-label">{{ row.label }}</span>
@@ -137,6 +137,26 @@
     </div>
     {% empty %}
     <div class="empty-state">No expenses recorded yet.</div>
+    {% endfor %}
+  </div>
+
+  <div class="card chart-card">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+      <div>
+        <h3>Company Expenses</h3>
+        <p class="chart-sub">{{ current_quarter_label }} — resets every quarter</p>
+      </div>
+      <a href="{% url 'expense-list' %}?type=company" class="btn btn-sm btn-outline">Manage</a>
+    </div>
+    <div class="kv-row" style="margin-bottom:10px;"><span class="k">This Quarter</span><span class="v">&#8377;{{ company_quarter_total|intcomma }}</span></div>
+    {% for row in company_expense_categories %}
+    <div class="bar-row">
+      <span class="bar-label">{{ row.label }}</span>
+      <span class="bar-track"><span class="bar-fill danger-fill" style="width: {{ row.pct }}%;" title="&#8377;{{ row.total|intcomma }}"></span></span>
+      <span class="bar-value">&#8377;{{ row.total|intcomma }}</span>
+    </div>
+    {% empty %}
+    <div class="empty-state">No company expenses logged this quarter.</div>
     {% endfor %}
   </div>
 

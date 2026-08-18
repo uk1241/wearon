@@ -251,6 +251,42 @@ class Expense(models.Model):
         return self.quantity * self.unit_cost
 
 
+class CompanyExpense(models.Model):
+    """General business overhead (rent, utilities, salaries, ...) — not tied to a specific order."""
+
+    CATEGORY_CHOICES = [
+        ("rent", "Rent"),
+        ("utilities", "Utilities"),
+        ("salaries", "Salaries"),
+        ("maintenance", "Maintenance"),
+        ("marketing", "Marketing"),
+        ("supplies", "Office Supplies"),
+        ("transport", "Transport"),
+        ("other", "Other"),
+    ]
+
+    name = models.CharField(max_length=150)
+    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, default="other")
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    expense_date = models.DateField(default=timezone.localdate)
+    notes = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-expense_date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.name} — ₹{self.amount}"
+
+    @property
+    def quarter_number(self):
+        return (self.expense_date.month - 1) // 3 + 1
+
+    @property
+    def quarter_label(self):
+        return f"Q{self.quarter_number} {self.expense_date.year}"
+
+
 class Employee(models.Model):
     EMPLOYEE_STATUS_ACTIVE = "active"
     EMPLOYEE_STATUS_INACTIVE = "inactive"

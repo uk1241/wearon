@@ -3,7 +3,7 @@
 {% block title %}Reports — TextileFlow{% endblock %}
 {% block content %}
 <h1 class="page-title">Reports</h1>
-<p class="page-sub">Revenue, expenses, and profit across all orders.</p>
+<p class="page-sub">Revenue, expenses, and profit across all orders — plus overall company overhead.</p>
 
 <div class="stat-grid">
   <div class="card stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value">&#8377;{{ total_revenue|intcomma }}</div></div>
@@ -33,6 +33,38 @@
     </div>
     {% empty %}
     <p class="text-muted">No revenue recorded yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="detail-grid">
+  <div class="card info-card">
+    <h3>Expense Breakdown</h3>
+    <div class="bar-row">
+      <span class="bar-label">Order Expenses</span>
+      <span class="bar-track"><span class="bar-fill danger-fill" style="width:{% widthratio order_expenses_total total_expenses 100 %}%;"></span></span>
+      <span class="bar-value">&#8377;{{ order_expenses_total|intcomma }}</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label">Company Expenses</span>
+      <span class="bar-track"><span class="bar-fill danger-fill" style="width:{% widthratio company_expenses_total total_expenses 100 %}%;"></span></span>
+      <span class="bar-value">&#8377;{{ company_expenses_total|intcomma }}</span>
+    </div>
+    <p class="text-muted" style="margin-top:10px;">
+      <a href="{% url 'expense-list' %}?type=company">Manage company expenses &rarr;</a>
+    </p>
+  </div>
+  <div class="card info-card">
+    <h3>Company Expenses by Quarter</h3>
+    <p class="text-muted" style="margin-top:-6px; margin-bottom:14px;">The per-quarter figure on the dashboard resets each quarter — this history never does.</p>
+    {% for row in quarterly_company_rows %}
+    <div class="bar-row">
+      <span class="bar-label">{{ row.label }}</span>
+      <span class="bar-track"><span class="bar-fill danger-fill" style="width:{{ row.pct|floatformat:0 }}%;"></span></span>
+      <span class="bar-value">&#8377;{{ row.total|intcomma }}</span>
+    </div>
+    {% empty %}
+    <p class="text-muted">No company expenses recorded yet.</p>
     {% endfor %}
   </div>
 </div>

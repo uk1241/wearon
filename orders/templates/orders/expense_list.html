@@ -3,7 +3,85 @@
 {% block title %}Expenses — TextileFlow{% endblock %}
 {% block content %}
 <h1 class="page-title">Expenses</h1>
-<p class="page-sub">View expenses grouped by order, with expense management inside each order card.</p>
+<p class="page-sub">
+  {% if expense_type == "company" %}
+  General business overhead — rent, utilities, salaries, and everything not tied to a specific order.
+  {% else %}
+  View order-linked expenses, with expense management inside each order card.
+  {% endif %}
+</p>
+
+<div class="filter-bar">
+  <div class="tabs">
+    <a class="tab {% if expense_type == "default" %}active{% endif %}" href="?type=default">Default Expenses</a>
+    <a class="tab {% if expense_type == "company" %}active{% endif %}" href="?type=company">Company Expenses</a>
+  </div>
+  {% if expense_type == "company" %}
+  <a href="{% url 'company-expense-create' %}" class="btn btn-primary btn-sm">+ Add Company Expense</a>
+  {% endif %}
+</div>
+
+{% if expense_type == "company" %}
+
+<div class="stat-grid">
+  <div class="card stat-card"><div class="stat-label">This Quarter ({{ quarter_label }})</div><div class="stat-value red">&#8377;{{ this_quarter_total|intcomma }}</div></div>
+  <div class="card stat-card"><div class="stat-label">All-Time Total</div><div class="stat-value">&#8377;{{ all_time_company_total|intcomma }}</div></div>
+</div>
+
+<div class="card info-card" style="margin-bottom:20px;">
+  <h3>{{ quarter_label }} by Category</h3>
+  {% for row in company_category_rows %}
+  <div class="bar-row">
+    <span class="bar-label">{{ row.label }}</span>
+    <span class="bar-track"><span class="bar-fill danger-fill" style="width:{{ row.pct }}%;"></span></span>
+    <span class="bar-value">&#8377;{{ row.total|intcomma }}</span>
+  </div>
+  {% empty %}
+  <p class="text-muted">No company expenses logged this quarter yet.</p>
+  {% endfor %}
+</div>
+
+<div class="card employee-section">
+  <h3>All Company Expenses</h3>
+  <p class="text-muted" style="margin-top:-6px;">Every entry stays here and in Reports even after the quarter it belongs to ends.</p>
+  <div class="employee-table-wrap">
+    <table class="employee-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Quarter</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Amount</th>
+          <th>Notes</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for expense in company_expenses %}
+        <tr>
+          <td>{{ expense.expense_date }}</td>
+          <td>{{ expense.quarter_label }}</td>
+          <td>{{ expense.name }}</td>
+          <td>{{ expense.get_category_display }}</td>
+          <td>&#8377;{{ expense.amount|intcomma }}</td>
+          <td>{{ expense.notes|default:"—" }}</td>
+          <td>
+            <form method="post" action="{% url 'company-expense-delete' expense.pk %}" class="inline-form">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this company expense?');">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="empty-row">No company expenses recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
 
 <div class="order-grid">
   {% for order in orders %}
@@ -40,4 +118,6 @@
   <div class="empty-state">No orders available yet.</div>
   {% endfor %}
 </div>
+
+{% endif %}
 {% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Add Company Expense — TextileFlow{% endblock %}
+{% block content %}
+<h1 class="page-title">Add Company Expense</h1>
+<p class="page-sub">General business overhead — not tied to a specific order.</p>
+<div class="card form-card" style="max-width:640px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="field-grid">
+      <div class="field" style="grid-column: span 2;">
+        <label for="id_name">Expense Name</label>
+        {{ form.name }}
+      </div>
+      <div class="field">
+        <label for="id_category">Category</label>
+        {{ form.category }}
+      </div>
+      <div class="field">
+        <label for="id_amount">Amount (₹)</label>
+        {{ form.amount }}
+      </div>
+      <div class="field">
+        <label for="id_expense_date">Date</label>
+        {{ form.expense_date }}
+      </div>
+      <div class="field" style="grid-column: span 2;">
+        <label for="id_notes">Notes</label>
+        {{ form.notes }}
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:12px;">
+      <a href="{% url 'expense-list' %}?type=company" class="btn btn-outline">Cancel</a>
+      <button class="btn btn-primary" type="submit">Save Expense</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
