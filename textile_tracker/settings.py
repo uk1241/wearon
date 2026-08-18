@@ -23,8 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-_@=6adztx&h$pv&+&uxs06mqim%vttc*i7%+(n6&(hu_-p+jf8"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
+DEBUG = False
 import os
 
 ALLOWED_HOSTS = [
@@ -83,6 +82,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "textile_tracker.wsgi.application"
+
 
 
 # Database
